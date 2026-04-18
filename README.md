@@ -14,7 +14,7 @@ Die Oberfläche ist auf **Deutsch** ausgerichtet (`lang="de"`).
 - **Einkauf** (`/plan/einkauf`): Aggregierte Liste zur Woche; **Druckansicht** unter `/plan/einkauf/druck`.
 - **Statistik** (`/statistik`): Auswertung der Koch-Historie.
 - **Reaktionen**: Like/Dislike pro Rezept (Cookie-basierte Besucherzuordnung möglich).
-- **Admin** (`/admin`): Nach PIN-Login u. a. Theme-Farben für den Admin-Bereich; PIN wird gehasht in der Datenbank gehalten.
+- **Admin** (`/admin`): Nach PIN-Login u. a. Theme-Farben für den Admin-Bereich; PIN wird gehasht in der Datenbank gehalten. **Standard-PIN bei neuer/leerer Datenbank: `0000`** — in Produktion sofort ändern.
 
 ## Technologie-Stack
 
@@ -119,7 +119,7 @@ Tests liegen u. a. unter `src/lib/*.test.ts`; Konfiguration: `vitest.config.ts
 | `/favoriten` | Favoriten (lokal) |
 | `/plan`, `/plan/einkauf`, `/plan/einkauf/druck` | Planung & Einkauf |
 | `/statistik` | Koch-Statistik |
-| `/admin`, `/admin/login` | Administration |
+| `/admin`, `/admin/login` | Administration (Login mit PIN; Standard bei frischer DB: **`0000`**) |
 
 ## Projektstruktur (Auszug)
 
