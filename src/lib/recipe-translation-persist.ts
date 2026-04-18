@@ -1,6 +1,3 @@
-"use server";
-
-import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import {
   isRecipeTranslateTargetCode,
@@ -8,7 +5,7 @@ import {
 } from "@/lib/recipe-translate-locales";
 import { translateRecipeLines, translateRecipeText } from "@/lib/recipe-translator";
 
-export type TranslateRecipeState =
+export type PersistTranslationResult =
   | { ok: true }
   | { ok: false; error: string };
 
@@ -20,10 +17,11 @@ function instructionsFromRecipe(instructions: unknown): string[] {
       : [];
 }
 
-export async function translateRecipeAction(
+/** Legt/aktualisiert die Übersetzung eines Rezepts (ohne revalidate). */
+export async function persistRecipeTranslation(
   recipeId: string,
   targetLocale: string,
-): Promise<TranslateRecipeState> {
+): Promise<PersistTranslationResult> {
   if (!isRecipeTranslateTargetCode(targetLocale)) {
     return { ok: false, error: "Unbekannte Zielsprache." };
   }
@@ -121,6 +119,5 @@ export async function translateRecipeAction(
     return { ok: false, error: msg };
   }
 
-  revalidatePath(`/recipes/${recipeId}`);
   return { ok: true };
 }

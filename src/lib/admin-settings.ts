@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { hashAdminPin } from "@/lib/admin-pin";
 import type { AdminThemeColors } from "@/lib/admin-theme-defaults";
+import { normalizeRecipeDisplayLocale } from "@/lib/recipe-display-locale";
+import type { RecipeViewLang } from "@/lib/recipe-translate-locales";
 
 const ADMIN_ROW_ID = "default";
 export const DEFAULT_ADMIN_PIN = "0000";
@@ -33,4 +35,9 @@ export function adminThemeFromRow(row: AdminThemeColors): AdminThemeColors {
 export async function getAdminPinHash(): Promise<string> {
   const row = await ensureAdminSettings();
   return row.pinHash;
+}
+
+export async function getRecipeDisplayLocale(): Promise<RecipeViewLang> {
+  const row = await ensureAdminSettings();
+  return normalizeRecipeDisplayLocale(row.recipeDisplayLocale);
 }

@@ -1,20 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { translateRecipeAction } from "@/app/recipes/translate-recipe-action";
 import {
   INGREDIENT_GROUP_LABEL,
   groupIngredientsForDisplay,
   type IngredientGroupId,
 } from "@/lib/ingredient-category";
 import { displayIngredientLine } from "@/lib/portion-scale";
-import {
-  RECIPE_TRANSLATE_TARGETS,
-  isRecipeViewLang,
-  type RecipeViewLang,
-} from "@/lib/recipe-translate-locales";
+import type { RecipeViewLang } from "@/lib/recipe-translate-locales";
 import { recipeViewStepsCaption, recipeViewStrings } from "@/lib/recipe-view-i18n";
 import { RecipeReactions } from "@/components/RecipeReactions";
 import { RecipeInstructions } from "@/components/RecipeInstructions";
@@ -180,36 +174,22 @@ export function RecipeDetailClient(props: {
   ingredients: { id: string; rawText: string }[];
   nutritionText: string | null;
   instructions: string[];
+  recipeViewLang: RecipeViewLang;
   translations: RecipeTranslationPayload[];
   likeCount: number;
   dislikeCount: number;
   cookCount: number;
   cookRecent: { id: string; cookedAt: string }[];
 }) {
-  const router = useRouter();
-  const [pendingTranslate, startTranslate] = useTransition();
-  const [translateError, setTranslateError] = useState<string | null>(null);
-  const [viewLang, setViewLang] = useState<RecipeViewLang>("de");
+  const viewLang = props.recipeViewLang;
 
   const [servings, setServings] = useState(() => props.servingsBase);
-
-  useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem(`recipeViewLang:${props.recipeId}`);
-      if (raw && isRecipeViewLang(raw)) {
-        queueMicrotask(() => setViewLang(raw));
-      }
-    } catch {
-      /* ignore */
-    }
-  }, [props.recipeId]);
 
   const ui = recipeViewStrings(viewLang);
   const activeTranslation =
     viewLang === "de"
       ? undefined
       : props.translations.find((t) => t.locale === viewLang);
-  const hasTranslationCache = Boolean(activeTranslation);
 
   const displayTitle = activeTranslation?.title ?? props.title;
   const displayDescription = activeTranslation?.description ?? props.description;
@@ -280,7 +260,10 @@ export function RecipeDetailClient(props: {
     labels: panelLabels,
   };
 
-  const categoryText = recipeCategoryLabel(props.category);
+  const categoryText = recipeCategoryLabel(
+    props.category,
+    viewLang === "de" ? "de" : "en",
+  );
   const dietText = recipeDietKindLabel(props.dietKind);
 
   const articleLang = viewLang === "de" ? "de" : viewLang;
@@ -317,76 +300,6 @@ export function RecipeDetailClient(props: {
           </Link>
         </div>
       </div>
-
-      <section className="mb-8 rounded-2xl border border-border bg-card-muted/60 p-4 ring-1 ring-ring-card sm:p-5">
-        <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {ui.translationBar}
-        </p>
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-          <label className="flex min-w-[12rem] flex-col gap-1">
-            <span className="text-xs font-medium text-muted-foreground">
-              {ui.languageLabel}
-            </span>
-            <select
-              value={viewLang}
-              onChange={(e) => {
-                const v = e.target.value;
-                if (!isRecipeViewLang(v)) return;
-                setTranslateError(null);
-                setViewLang(v);
-                try {
-                  sessionStorage.setItem(`recipeViewLang:${props.recipeId}`, v);
-                } catch {
-                  /* ignore */
-                }
-              }}
-              className="input-field w-full px-3 py-2 text-sm"
-            >
-              <option value="de">{ui.optionOriginal}</option>
-              {RECIPE_TRANSLATE_TARGETS.map((t) => (
-                <option key={t.code} value={t.code}>
-                  {t.labelDe}
-                </option>
-              ))}
-            </select>
-          </label>
-          {viewLang !== "de" && !hasTranslationCache ? (
-            <button
-              type="button"
-              disabled={pendingTranslate}
-              onClick={() => {
-                setTranslateError(null);
-                startTranslate(() => {
-                  void (async () => {
-                    const res = await translateRecipeAction(
-                      props.recipeId,
-                      viewLang,
-                    );
-                    if (!res.ok) {
-                      setTranslateError(res.error);
-                      return;
-                    }
-                    router.refresh();
-                  })();
-                });
-              }}
-              className="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-60 sm:py-2"
-            >
-              {pendingTranslate ? ui.translating : ui.translateButton}
-            </button>
-          ) : null}
-        </div>
-        {viewLang !== "de" && !hasTranslationCache ? (
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            {ui.translateHintNoCache}
-          </p>
-        ) : null}
-        {translateError ? (
-          <p className="mt-3 text-sm text-red-600 dark:text-red-400" role="alert">
-            {ui.translateErrorPrefix}: {translateError}
-          </p>
-        ) : null}
-      </section>
 
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_min(100%,20rem)] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_22rem] xl:gap-12">
         <div className="min-w-0 space-y-8">

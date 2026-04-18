@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useId, useRef, useState } from "react";
 import { AdminAppearancePanel } from "@/app/admin/AdminAppearancePanel";
+import { AdminRecipeDisplayLocalePanel } from "@/app/admin/AdminRecipeDisplayLocalePanel";
 import {
   adminChangePinAction,
   adminLogoutAction,
@@ -12,6 +13,7 @@ import {
   type AdminVotesResetState,
 } from "@/app/admin/actions";
 import type { AdminThemeColors } from "@/lib/admin-theme-defaults";
+import type { RecipeViewLang } from "@/lib/recipe-translate-locales";
 
 const changeInitial: AdminActionState = {};
 const votesResetInitial: AdminVotesResetState = {};
@@ -21,7 +23,13 @@ type AdminTab = "security" | "votes" | "appearance";
 const tabBtn =
   "rounded-t-lg border-b-2 border-transparent px-3 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)]";
 
-export function AdminPanel({ initialAppearance }: { initialAppearance: AdminThemeColors }) {
+export function AdminPanel({
+  initialAppearance,
+  initialRecipeDisplayLocale,
+}: {
+  initialAppearance: AdminThemeColors;
+  initialRecipeDisplayLocale: RecipeViewLang;
+}) {
   const [tab, setTab] = useState<AdminTab>("security");
   const securityTabId = useId();
   const votesTabId = useId();
@@ -320,6 +328,7 @@ export function AdminPanel({ initialAppearance }: { initialAppearance: AdminThem
         hidden={tab !== "appearance"}
         className="pt-6"
       >
+        <AdminRecipeDisplayLocalePanel initialLocale={initialRecipeDisplayLocale} />
         <AdminAppearancePanel initial={initialAppearance} />
       </div>
 

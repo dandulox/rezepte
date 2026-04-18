@@ -24,6 +24,9 @@ model AdminSettings {
   adminAccentDarkHover String @default("#a5b4fc")
   adminAccentDarkFg    String @default("#18181b")
   adminSuccessDark     String @default("#a5b4fc")
+
+  /// Rezeptseiten: `de` = Original, sonst ISO-Code (en, fr, …) wenn Übersetzung existiert.
+  recipeDisplayLocale String @default("de")
 }
 
 enum RecipeVoteType {

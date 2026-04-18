@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { RecipeDetailClient } from "@/components/RecipeDetailClient";
 import { RecipeVoteType } from "@/generated/prisma/client";
+import { getRecipeDisplayLocale } from "@/lib/admin-settings";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -71,9 +72,10 @@ export default async function RecipeDetailPage({
       ? [recipe.instructions]
       : [];
 
+  const recipeViewLang = await getRecipeDisplayLocale();
+
   return (
     <RecipeDetailClient
-      key={recipe.id}
       recipeId={recipe.id}
       title={recipe.title}
       category={recipe.category}
@@ -88,6 +90,7 @@ export default async function RecipeDetailPage({
       ingredients={recipe.ingredients}
       nutritionText={recipe.nutritionText}
       instructions={instructions}
+      recipeViewLang={recipeViewLang}
       translations={translations}
       likeCount={likeCount}
       dislikeCount={dislikeCount}
