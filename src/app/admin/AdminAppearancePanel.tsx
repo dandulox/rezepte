@@ -1,35 +1,17 @@
 "use client";
 
-import { useActionState, useEffect, useId, useState } from "react";
+import { useActionState, useEffect, useId, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   adminResetThemeAction,
   adminSaveThemeAction,
   type AdminThemeActionState,
 } from "@/app/admin/actions";
+import { AdminHiddenUiLocale } from "@/components/AdminHiddenUiLocale";
+import { useUiLocale } from "@/components/UiLocaleProvider";
 import type { AdminThemeColors } from "@/lib/admin-theme-defaults";
 
 const themeInitial: AdminThemeActionState = {};
-
-const LIGHT_LABELS: Record<
-  "adminAccentLight" | "adminAccentLightHover" | "adminAccentLightFg" | "adminSuccessLight",
-  string
-> = {
-  adminAccentLight: "Akzent",
-  adminAccentLightHover: "Akzent (Hover)",
-  adminAccentLightFg: "Schrift auf Buttons",
-  adminSuccessLight: "Erfolgsmeldungen",
-};
-
-const DARK_LABELS: Record<
-  "adminAccentDark" | "adminAccentDarkHover" | "adminAccentDarkFg" | "adminSuccessDark",
-  string
-> = {
-  adminAccentDark: "Akzent",
-  adminAccentDarkHover: "Akzent (Hover)",
-  adminAccentDarkFg: "Schrift auf Buttons",
-  adminSuccessDark: "Erfolgsmeldungen",
-};
 
 const LIGHT_ORDER = [
   "adminAccentLight",
@@ -86,6 +68,41 @@ function ThemeColorField({
 }
 
 export function AdminAppearancePanel({ initial }: { initial: AdminThemeColors }) {
+  const { strings: s } = useUiLocale();
+  const ap = s.admin.appearance;
+  const lightLabels = useMemo(
+    () =>
+      ({
+        adminAccentLight: ap.accent,
+        adminAccentLightHover: ap.accentHover,
+        adminAccentLightFg: ap.buttonText,
+        adminSuccessLight: ap.successMsgs,
+      }) as Record<
+        | "adminAccentLight"
+        | "adminAccentLightHover"
+        | "adminAccentLightFg"
+        | "adminSuccessLight",
+        string
+      >,
+    [ap.accent, ap.accentHover, ap.buttonText, ap.successMsgs],
+  );
+  const darkLabels = useMemo(
+    () =>
+      ({
+        adminAccentDark: ap.accent,
+        adminAccentDarkHover: ap.accentHover,
+        adminAccentDarkFg: ap.buttonText,
+        adminSuccessDark: ap.successMsgs,
+      }) as Record<
+        | "adminAccentDark"
+        | "adminAccentDarkHover"
+        | "adminAccentDarkFg"
+        | "adminSuccessDark",
+        string
+      >,
+    [ap.accent, ap.accentHover, ap.buttonText, ap.successMsgs],
+  );
+
   const router = useRouter();
   const [schemeTab, setSchemeTab] = useState<SchemeTab>("light");
   const lightTabId = useId();
@@ -113,17 +130,15 @@ export function AdminAppearancePanel({ initial }: { initial: AdminThemeColors })
   return (
     <section className="admin-surface space-y-4">
       <div>
-        <h2 className="text-lg font-medium text-foreground">Darstellung</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Akzentfarben für den Adminbereich (inkl. Login). Werte im Format #RRGGBB — getrennt für helles und
-          dunkles Erscheinungsbild.
-        </p>
+        <h2 className="text-lg font-medium text-foreground">{ap.panelTitle}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{ap.panelHint}</p>
       </div>
 
       <form action={saveAction} className="space-y-0 border-t border-border pt-4">
+        <AdminHiddenUiLocale />
         <div
           role="tablist"
-          aria-label="Farbschema"
+          aria-label={ap.colorSchemeAria}
           className="flex flex-wrap gap-1 border-b border-border"
         >
           <button
@@ -137,7 +152,7 @@ export function AdminAppearancePanel({ initial }: { initial: AdminThemeColors })
             className={`${schemeTabBtn} text-label hover:text-foreground data-[active]:border-[var(--admin-accent)] data-[active]:text-[var(--admin-accent)]`}
             onClick={() => setSchemeTab("light")}
           >
-            Hell
+            {ap.light}
           </button>
           <button
             type="button"
@@ -150,7 +165,7 @@ export function AdminAppearancePanel({ initial }: { initial: AdminThemeColors })
             className={`${schemeTabBtn} text-label hover:text-foreground data-[active]:border-[var(--admin-accent)] data-[active]:text-[var(--admin-accent)]`}
             onClick={() => setSchemeTab("dark")}
           >
-            Dunkel
+            {ap.dark}
           </button>
         </div>
 
@@ -165,7 +180,7 @@ export function AdminAppearancePanel({ initial }: { initial: AdminThemeColors })
             <ThemeColorField
               key={key}
               fieldKey={key}
-              label={LIGHT_LABELS[key]}
+              label={lightLabels[key]}
               value={colors[key]}
               onChange={(next) => setColors((c) => ({ ...c, [key]: next }))}
             />
@@ -183,7 +198,7 @@ export function AdminAppearancePanel({ initial }: { initial: AdminThemeColors })
             <ThemeColorField
               key={key}
               fieldKey={key}
-              label={DARK_LABELS[key]}
+              label={darkLabels[key]}
               value={colors[key]}
               onChange={(next) => setColors((c) => ({ ...c, [key]: next }))}
             />
@@ -197,12 +212,12 @@ export function AdminAppearancePanel({ initial }: { initial: AdminThemeColors })
         ) : null}
         {saveState.ok ? (
           <p className="pt-4 text-sm text-[var(--admin-success-fg)]" role="status">
-            Farben gespeichert.
+            {ap.colorsSaved}
           </p>
         ) : null}
         <div className="flex flex-wrap gap-3 pt-4">
           <button type="submit" disabled={savePending} className="admin-btn-primary">
-            {savePending ? "…" : "Farben speichern"}
+            {savePending ? "…" : ap.saveColors}
           </button>
         </div>
       </form>
@@ -211,14 +226,13 @@ export function AdminAppearancePanel({ initial }: { initial: AdminThemeColors })
         action={resetAction}
         className="border-t border-border pt-4"
         onSubmit={(e) => {
-          if (!window.confirm("Alle Admin-Farben auf Standard zurücksetzen?")) {
+          if (!window.confirm(ap.resetConfirm)) {
             e.preventDefault();
           }
         }}
       >
-        <p className="mb-3 text-sm text-muted-foreground">
-          Setzt alle Farben auf die mitgelieferten Standardwerte (Indigo) zurück.
-        </p>
+        <AdminHiddenUiLocale />
+        <p className="mb-3 text-sm text-muted-foreground">{ap.resetHint}</p>
         {resetState.error ? (
           <p className="mb-2 text-sm text-red-600 dark:text-red-400" role="alert">
             {resetState.error}
@@ -226,11 +240,11 @@ export function AdminAppearancePanel({ initial }: { initial: AdminThemeColors })
         ) : null}
         {resetState.ok ? (
           <p className="mb-2 text-sm text-[var(--admin-success-fg)]" role="status">
-            Standardfarben wiederhergestellt.
+            {ap.defaultsRestored}
           </p>
         ) : null}
         <button type="submit" disabled={resetPending} className="admin-btn-secondary">
-          {resetPending ? "…" : "Standard wiederherstellen"}
+          {resetPending ? "…" : ap.resetDefaults}
         </button>
       </form>
     </section>

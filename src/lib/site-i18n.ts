@@ -98,6 +98,97 @@ export type SiteStrings = {
       query: string;
     }) => string;
   };
+  admin: {
+    login: {
+      heading: string;
+      intro: (defaultPin: string) => string;
+      pinLabel: string;
+      submit: string;
+      backLink: string;
+    };
+    panel: {
+      title: string;
+      subtitle: string;
+      tabListAria: string;
+      tabSecurity: string;
+      tabVotes: string;
+      tabAppearance: string;
+      logout: string;
+    };
+    security: {
+      title: string;
+      hint: string;
+      currentPin: string;
+      newPin: string;
+      confirmPin: string;
+      savePin: string;
+      pinChanged: string;
+    };
+    votes: {
+      sectionTitle: string;
+      sectionHint: string;
+      likesOnlyTitle: string;
+      dislikesOnlyTitle: string;
+      allTitle: string;
+      confirmLikes: string;
+      confirmDislikes: string;
+      confirmAll: string;
+      resetLikes: string;
+      resetDislikes: string;
+      resetAll: string;
+      deletedLikes: (n: number) => string;
+      deletedDislikes: (n: number) => string;
+      deletedAll: (n: number) => string;
+      resetLikesFallback: string;
+      resetDislikesFallback: string;
+      resetAllFallback: string;
+    };
+    appearance: {
+      panelTitle: string;
+      panelHint: string;
+      colorSchemeAria: string;
+      light: string;
+      dark: string;
+      saveColors: string;
+      colorsSaved: string;
+      resetHint: string;
+      resetConfirm: string;
+      resetDefaults: string;
+      defaultsRestored: string;
+      accent: string;
+      accentHover: string;
+      buttonText: string;
+      successMsgs: string;
+    };
+    recipeDisplay: {
+      title: string;
+      hint: string;
+      displayLanguage: string;
+      optionDe: string;
+      targetEn: string;
+      targetFr: string;
+      targetIt: string;
+      targetEs: string;
+      targetPl: string;
+      saved: string;
+      save: string;
+      backfillHint: string;
+      backfillConfirm: string;
+      backfillButton: string;
+      backfillDone: (created: number, skipped: number, failed: number) => string;
+    };
+    serverErrors: {
+      sessionExpired: string;
+      pinMustBe4: string;
+      wrongPin: string;
+      allPinsMustBe4: string;
+      pinMismatch: string;
+      currentPinWrong: string;
+      invalidThemeColor: (key: string) => string;
+      invalidDisplayLocale: string;
+      backfillNeedsNonDe: string;
+    };
+  };
 };
 
 const DE: SiteStrings = {
@@ -217,6 +308,110 @@ const DE: SiteStrings = {
       return "Keine Rezepte.";
     },
   },
+  admin: {
+    login: {
+      heading: "Admin",
+      intro: (defaultPin) =>
+        `Melde dich mit der 4-stelligen PIN an. Standard nach Ersteinrichtung: ${defaultPin} — bitte im Adminbereich ändern.`,
+      pinLabel: "Admin-PIN (4 Ziffern)",
+      submit: "Anmelden",
+      backLink: "Zurück zur Startseite",
+    },
+    panel: {
+      title: "Adminbereich",
+      subtitle: "Sicherheit, Darstellung und Bewertungen.",
+      tabListAria: "Adminbereich",
+      tabSecurity: "Sicherheit",
+      tabVotes: "Bewertungen",
+      tabAppearance: "Darstellung",
+      logout: "Abmelden",
+    },
+    security: {
+      title: "PIN ändern",
+      hint: "Aktuellen PIN eingeben, dann viermal die neue PIN (nur Ziffern).",
+      currentPin: "Aktueller PIN",
+      newPin: "Neuer PIN",
+      confirmPin: "Neuer PIN (Wiederholung)",
+      savePin: "PIN speichern",
+      pinChanged: "PIN wurde geändert.",
+    },
+    votes: {
+      sectionTitle: "Likes & Dislikes",
+      sectionHint:
+        "Zähler pro Art zurücksetzen oder alle Bewertungen auf einmal entfernen. Gilt für alle Rezepte.",
+      likesOnlyTitle: "Nur Likes",
+      dislikesOnlyTitle: "Nur Dislikes",
+      allTitle: "Alles",
+      confirmLikes:
+        "Alle Like-Einträge unwiderruflich löschen? Dislikes bleiben erhalten.",
+      confirmDislikes:
+        "Alle Dislike-Einträge unwiderruflich löschen? Likes bleiben erhalten.",
+      confirmAll:
+        "Alle Likes und Dislikes unwiderruflich löschen? Dies betrifft alle Rezepte.",
+      resetLikes: "Alle Likes zurücksetzen",
+      resetDislikes: "Alle Dislikes zurücksetzen",
+      resetAll: "Alle Likes & Dislikes zurücksetzen",
+      deletedLikes: (n) => `${n} Like-Einträge gelöscht.`,
+      deletedDislikes: (n) => `${n} Dislike-Einträge gelöscht.`,
+      deletedAll: (n) => `${n} Einträge gelöscht.`,
+      resetLikesFallback: "Likes zurückgesetzt.",
+      resetDislikesFallback: "Dislikes zurückgesetzt.",
+      resetAllFallback: "Zähler zurückgesetzt.",
+    },
+    appearance: {
+      panelTitle: "Darstellung",
+      panelHint:
+        "Akzentfarben für den Adminbereich (inkl. Login). Werte im Format #RRGGBB — getrennt für helles und dunkles Erscheinungsbild.",
+      colorSchemeAria: "Farbschema",
+      light: "Hell",
+      dark: "Dunkel",
+      saveColors: "Farben speichern",
+      colorsSaved: "Farben gespeichert.",
+      resetHint:
+        "Setzt alle Farben auf die mitgelieferten Standardwerte (Indigo) zurück.",
+      resetConfirm: "Alle Admin-Farben auf Standard zurücksetzen?",
+      resetDefaults: "Standard wiederherstellen",
+      defaultsRestored: "Standardfarben wiederhergestellt.",
+      accent: "Akzent",
+      accentHover: "Akzent (Hover)",
+      buttonText: "Schrift auf Buttons",
+      successMsgs: "Erfolgsmeldungen",
+    },
+    recipeDisplay: {
+      title: "Rezept-Anzeige",
+      hint:
+        "Sprache für Rezepttexte (Titel, Zutaten, Schritte) auf allen Rezeptseiten. Übersetzungen werden lokal gespeichert; ohne gespeicherte Übersetzung wird das deutsche Original angezeigt.",
+      displayLanguage: "Anzeigesprache",
+      optionDe: "Deutsch (Original)",
+      targetEn: "Englisch",
+      targetFr: "Französisch",
+      targetIt: "Italienisch",
+      targetEs: "Spanisch",
+      targetPl: "Polnisch",
+      saved: "Anzeigesprache gespeichert.",
+      save: "Speichern",
+      backfillHint:
+        "Erzeugt fehlende Übersetzungen nur für die gespeicherte Anzeigesprache (nicht Deutsch). Bereits vorhandene Übersetzungen werden übersprungen.",
+      backfillConfirm:
+        "Für alle Rezepte fehlende Übersetzungen in der aktuell gespeicherten Anzeigesprache erzeugen? Das kann je nach Anzahl der Rezepte und Übersetzungsdienst einige Minuten dauern und ruft einen externen Dienst auf.",
+      backfillButton: "Fehlende Übersetzungen erzeugen",
+      backfillDone: (created, skipped, failed) =>
+        `Fertig: ${created} neu, ${skipped} schon vorhanden${failed ? `, ${failed} fehlgeschlagen` : ""}.`,
+    },
+    serverErrors: {
+      sessionExpired: "Sitzung abgelaufen. Bitte erneut anmelden.",
+      pinMustBe4: "PIN muss genau 4 Ziffern sein.",
+      wrongPin: "Falscher PIN.",
+      allPinsMustBe4: "Alle PINs müssen genau 4 Ziffern sein.",
+      pinMismatch: "Neue PIN und Wiederholung stimmen nicht überein.",
+      currentPinWrong: "Aktueller PIN ist falsch.",
+      invalidThemeColor: (key) =>
+        `Ungültige Farbe: „${key}“ muss als #RRGGBB angegeben werden.`,
+      invalidDisplayLocale: "Ungültige Anzeigesprache.",
+      backfillNeedsNonDe:
+        "Für „Deutsch (Original)“ werden keine Übersetzungen gespeichert. Bitte zuerst eine andere Anzeigesprache wählen und speichern.",
+    },
+  },
 };
 
 const EN: SiteStrings = {
@@ -333,6 +528,109 @@ const EN: SiteStrings = {
         return "No recipes for this diet (or missing classification).";
       }
       return "No recipes.";
+    },
+  },
+  admin: {
+    login: {
+      heading: "Admin",
+      intro: (defaultPin) =>
+        `Sign in with your 4-digit PIN. Default after first setup: ${defaultPin} — please change it in the admin area.`,
+      pinLabel: "Admin PIN (4 digits)",
+      submit: "Sign in",
+      backLink: "Back to home",
+    },
+    panel: {
+      title: "Admin",
+      subtitle: "Security, appearance and ratings.",
+      tabListAria: "Admin area",
+      tabSecurity: "Security",
+      tabVotes: "Ratings",
+      tabAppearance: "Appearance",
+      logout: "Sign out",
+    },
+    security: {
+      title: "Change PIN",
+      hint: "Enter your current PIN, then the new PIN twice (digits only).",
+      currentPin: "Current PIN",
+      newPin: "New PIN",
+      confirmPin: "New PIN (repeat)",
+      savePin: "Save PIN",
+      pinChanged: "PIN has been changed.",
+    },
+    votes: {
+      sectionTitle: "Likes & dislikes",
+      sectionHint:
+        "Reset counts by type or remove all ratings at once. Applies to all recipes.",
+      likesOnlyTitle: "Likes only",
+      dislikesOnlyTitle: "Dislikes only",
+      allTitle: "All",
+      confirmLikes:
+        "Delete all like entries permanently? Dislikes will be kept.",
+      confirmDislikes:
+        "Delete all dislike entries permanently? Likes will be kept.",
+      confirmAll:
+        "Delete all likes and dislikes permanently? This affects every recipe.",
+      resetLikes: "Reset all likes",
+      resetDislikes: "Reset all dislikes",
+      resetAll: "Reset all likes & dislikes",
+      deletedLikes: (n) => `${n} like entries deleted.`,
+      deletedDislikes: (n) => `${n} dislike entries deleted.`,
+      deletedAll: (n) => `${n} entries deleted.`,
+      resetLikesFallback: "Likes reset.",
+      resetDislikesFallback: "Dislikes reset.",
+      resetAllFallback: "Counts reset.",
+    },
+    appearance: {
+      panelTitle: "Appearance",
+      panelHint:
+        "Accent colours for the admin area (including login). Use #RRGGBB — separate sets for light and dark mode.",
+      colorSchemeAria: "Colour scheme",
+      light: "Light",
+      dark: "Dark",
+      saveColors: "Save colours",
+      colorsSaved: "Colours saved.",
+      resetHint: "Resets all colours to the built-in defaults (indigo).",
+      resetConfirm: "Reset all admin colours to defaults?",
+      resetDefaults: "Restore defaults",
+      defaultsRestored: "Default colours restored.",
+      accent: "Accent",
+      accentHover: "Accent (hover)",
+      buttonText: "Text on buttons",
+      successMsgs: "Success messages",
+    },
+    recipeDisplay: {
+      title: "Recipe display",
+      hint:
+        "Language for recipe text (title, ingredients, steps) on every recipe page. Translations are stored locally; without a saved translation the German original is shown.",
+      displayLanguage: "Display language",
+      optionDe: "German (original)",
+      targetEn: "English",
+      targetFr: "French",
+      targetIt: "Italian",
+      targetEs: "Spanish",
+      targetPl: "Polish",
+      saved: "Display language saved.",
+      save: "Save",
+      backfillHint:
+        "Creates missing translations only for the saved display language (not German). Existing translations are skipped.",
+      backfillConfirm:
+        "Create missing translations for all recipes in the currently saved display language? This may take several minutes depending on recipe count and calls an external service.",
+      backfillButton: "Create missing translations",
+      backfillDone: (created, skipped, failed) =>
+        `Done: ${created} new, ${skipped} already present${failed ? `, ${failed} failed` : ""}.`,
+    },
+    serverErrors: {
+      sessionExpired: "Session expired. Please sign in again.",
+      pinMustBe4: "PIN must be exactly 4 digits.",
+      wrongPin: "Incorrect PIN.",
+      allPinsMustBe4: "All PINs must be exactly 4 digits.",
+      pinMismatch: "New PIN and confirmation do not match.",
+      currentPinWrong: "Current PIN is incorrect.",
+      invalidThemeColor: (key) =>
+        `Invalid colour: “${key}” must be #RRGGBB.`,
+      invalidDisplayLocale: "Invalid display language.",
+      backfillNeedsNonDe:
+        "No translations are stored for “German (original)”. Please choose another display language and save first.",
     },
   },
 };

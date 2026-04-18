@@ -12,6 +12,8 @@ import {
   type AdminActionState,
   type AdminVotesResetState,
 } from "@/app/admin/actions";
+import { AdminHiddenUiLocale } from "@/components/AdminHiddenUiLocale";
+import { useUiLocale } from "@/components/UiLocaleProvider";
 import type { AdminThemeColors } from "@/lib/admin-theme-defaults";
 import type { RecipeViewLang } from "@/lib/recipe-translate-locales";
 
@@ -30,6 +32,10 @@ export function AdminPanel({
   initialAppearance: AdminThemeColors;
   initialRecipeDisplayLocale: RecipeViewLang;
 }) {
+  const { strings: s } = useUiLocale();
+  const p = s.admin.panel;
+  const sec = s.admin.security;
+  const v = s.admin.votes;
   const [tab, setTab] = useState<AdminTab>("security");
   const securityTabId = useId();
   const votesTabId = useId();
@@ -66,15 +72,13 @@ export function AdminPanel({
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
       <h1 className="text-2xl font-semibold tracking-tight text-[var(--admin-accent)]">
-        Adminbereich
+        {p.title}
       </h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Sicherheit, Darstellung und Bewertungen.
-      </p>
+      <p className="mt-2 text-sm text-muted-foreground">{p.subtitle}</p>
 
       <div
         role="tablist"
-        aria-label="Adminbereich"
+        aria-label={p.tabListAria}
         className="mt-6 flex flex-wrap gap-1 border-b border-border"
       >
         <button
@@ -88,7 +92,7 @@ export function AdminPanel({
           className={`${tabBtn} text-label hover:text-foreground data-[active]:border-[var(--admin-accent)] data-[active]:text-[var(--admin-accent)]`}
           onClick={() => setTab("security")}
         >
-          Sicherheit
+          {p.tabSecurity}
         </button>
         <button
           type="button"
@@ -101,7 +105,7 @@ export function AdminPanel({
           className={`${tabBtn} text-label hover:text-foreground data-[active]:border-[var(--admin-accent)] data-[active]:text-[var(--admin-accent)]`}
           onClick={() => setTab("votes")}
         >
-          Bewertungen
+          {p.tabVotes}
         </button>
         <button
           type="button"
@@ -114,7 +118,7 @@ export function AdminPanel({
           className={`${tabBtn} text-label hover:text-foreground data-[active]:border-[var(--admin-accent)] data-[active]:text-[var(--admin-accent)]`}
           onClick={() => setTab("appearance")}
         >
-          Darstellung
+          {p.tabAppearance}
         </button>
       </div>
 
@@ -126,14 +130,13 @@ export function AdminPanel({
         className="pt-6"
       >
         <section className="admin-surface">
-          <h2 className="text-lg font-medium text-foreground">PIN ändern</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Aktuellen PIN eingeben, dann viermal die neue PIN (nur Ziffern).
-          </p>
+          <h2 className="text-lg font-medium text-foreground">{sec.title}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{sec.hint}</p>
           <form ref={formRef} action={changeAction} className="mt-4 space-y-3">
+            <AdminHiddenUiLocale />
             <div>
               <label htmlFor="currentPin" className="mb-1 block text-xs font-medium text-label">
-                Aktueller PIN
+                {sec.currentPin}
               </label>
               <input
                 id="currentPin"
@@ -148,7 +151,7 @@ export function AdminPanel({
             </div>
             <div>
               <label htmlFor="newPin" className="mb-1 block text-xs font-medium text-label">
-                Neuer PIN
+                {sec.newPin}
               </label>
               <input
                 id="newPin"
@@ -163,7 +166,7 @@ export function AdminPanel({
             </div>
             <div>
               <label htmlFor="confirmPin" className="mb-1 block text-xs font-medium text-label">
-                Neuer PIN (Wiederholung)
+                {sec.confirmPin}
               </label>
               <input
                 id="confirmPin"
@@ -183,11 +186,11 @@ export function AdminPanel({
             ) : null}
             {changeState.ok ? (
               <p className="text-sm text-[var(--admin-success-fg)]" role="status">
-                PIN wurde geändert.
+                {sec.pinChanged}
               </p>
             ) : null}
             <button type="submit" disabled={changePending} className="admin-btn-primary">
-              {changePending ? "…" : "PIN speichern"}
+              {changePending ? "…" : sec.savePin}
             </button>
           </form>
         </section>
@@ -202,27 +205,22 @@ export function AdminPanel({
       >
         <section className="admin-surface space-y-6">
           <div>
-            <h2 className="text-lg font-medium text-foreground">Likes &amp; Dislikes</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Zähler pro Art zurücksetzen oder alle Bewertungen auf einmal entfernen. Gilt für alle Rezepte.
-            </p>
+            <h2 className="text-lg font-medium text-foreground">{v.sectionTitle}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{v.sectionHint}</p>
           </div>
 
           <div className="space-y-4 border-t border-border pt-4">
-            <h3 className="text-sm font-medium text-foreground">Nur Likes</h3>
+            <h3 className="text-sm font-medium text-foreground">{v.likesOnlyTitle}</h3>
             <form
               action={likesAction}
               className="space-y-3"
               onSubmit={(e) => {
-                if (
-                  !window.confirm(
-                    "Alle Like-Einträge unwiderruflich löschen? Dislikes bleiben erhalten.",
-                  )
-                ) {
+                if (!window.confirm(v.confirmLikes)) {
                   e.preventDefault();
                 }
               }}
             >
+              <AdminHiddenUiLocale />
               {likesState.error ? (
                 <p className="text-sm text-red-600 dark:text-red-400" role="alert">
                   {likesState.error}
@@ -231,8 +229,8 @@ export function AdminPanel({
               {likesState.ok ? (
                 <p className="text-sm text-[var(--admin-success-fg)]" role="status">
                   {likesState.count !== undefined
-                    ? `${likesState.count} Like-Einträge gelöscht.`
-                    : "Likes zurückgesetzt."}
+                    ? v.deletedLikes(likesState.count)
+                    : v.resetLikesFallback}
                 </p>
               ) : null}
               <button
@@ -240,26 +238,23 @@ export function AdminPanel({
                 disabled={likesPending}
                 className="rounded-lg border border-amber-500/50 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-950 transition hover:bg-amber-100 disabled:opacity-60 dark:border-amber-500/40 dark:bg-amber-950/40 dark:text-amber-100 dark:hover:bg-amber-950/70"
               >
-                {likesPending ? "…" : "Alle Likes zurücksetzen"}
+                {likesPending ? "…" : v.resetLikes}
               </button>
             </form>
           </div>
 
           <div className="space-y-4 border-t border-border pt-4">
-            <h3 className="text-sm font-medium text-foreground">Nur Dislikes</h3>
+            <h3 className="text-sm font-medium text-foreground">{v.dislikesOnlyTitle}</h3>
             <form
               action={dislikesAction}
               className="space-y-3"
               onSubmit={(e) => {
-                if (
-                  !window.confirm(
-                    "Alle Dislike-Einträge unwiderruflich löschen? Likes bleiben erhalten.",
-                  )
-                ) {
+                if (!window.confirm(v.confirmDislikes)) {
                   e.preventDefault();
                 }
               }}
             >
+              <AdminHiddenUiLocale />
               {dislikesState.error ? (
                 <p className="text-sm text-red-600 dark:text-red-400" role="alert">
                   {dislikesState.error}
@@ -268,8 +263,8 @@ export function AdminPanel({
               {dislikesState.ok ? (
                 <p className="text-sm text-[var(--admin-success-fg)]" role="status">
                   {dislikesState.count !== undefined
-                    ? `${dislikesState.count} Dislike-Einträge gelöscht.`
-                    : "Dislikes zurückgesetzt."}
+                    ? v.deletedDislikes(dislikesState.count)
+                    : v.resetDislikesFallback}
                 </p>
               ) : null}
               <button
@@ -277,26 +272,23 @@ export function AdminPanel({
                 disabled={dislikesPending}
                 className="rounded-lg border border-violet-400/50 bg-violet-50 px-4 py-2 text-sm font-medium text-violet-950 transition hover:bg-violet-100 disabled:opacity-60 dark:border-violet-500/40 dark:bg-violet-950/40 dark:text-violet-100 dark:hover:bg-violet-950/70"
               >
-                {dislikesPending ? "…" : "Alle Dislikes zurücksetzen"}
+                {dislikesPending ? "…" : v.resetDislikes}
               </button>
             </form>
           </div>
 
           <div className="space-y-4 border-t border-border pt-4">
-            <h3 className="text-sm font-medium text-foreground">Alles</h3>
+            <h3 className="text-sm font-medium text-foreground">{v.allTitle}</h3>
             <form
               action={allVotesAction}
               className="space-y-3"
               onSubmit={(e) => {
-                if (
-                  !window.confirm(
-                    "Alle Likes und Dislikes unwiderruflich löschen? Dies betrifft alle Rezepte.",
-                  )
-                ) {
+                if (!window.confirm(v.confirmAll)) {
                   e.preventDefault();
                 }
               }}
             >
+              <AdminHiddenUiLocale />
               {allVotesState.error ? (
                 <p className="text-sm text-red-600 dark:text-red-400" role="alert">
                   {allVotesState.error}
@@ -305,8 +297,8 @@ export function AdminPanel({
               {allVotesState.ok ? (
                 <p className="text-sm text-[var(--admin-success-fg)]" role="status">
                   {allVotesState.count !== undefined
-                    ? `${allVotesState.count} Einträge gelöscht.`
-                    : "Zähler zurückgesetzt."}
+                    ? v.deletedAll(allVotesState.count)
+                    : v.resetAllFallback}
                 </p>
               ) : null}
               <button
@@ -314,7 +306,7 @@ export function AdminPanel({
                 disabled={allVotesPending}
                 className="rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-800 transition hover:bg-red-100 disabled:opacity-60 dark:border-red-800/70 dark:bg-red-950/50 dark:text-red-200 dark:hover:bg-red-950/80"
               >
-                {allVotesPending ? "…" : "Alle Likes & Dislikes zurücksetzen"}
+                {allVotesPending ? "…" : v.resetAll}
               </button>
             </form>
           </div>
@@ -334,7 +326,7 @@ export function AdminPanel({
 
       <form action={adminLogoutAction} className="mt-8">
         <button type="submit" className="admin-btn-secondary">
-          Abmelden
+          {p.logout}
         </button>
       </form>
     </div>

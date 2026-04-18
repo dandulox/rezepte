@@ -12,6 +12,7 @@ import {
 } from "@/lib/admin-session";
 import { ADMIN_THEME_DEFAULTS } from "@/lib/admin-theme-defaults";
 import type { AdminThemeColors } from "@/lib/admin-theme-defaults";
+import { adminServerErrors, adminUiLocaleFromFormData } from "@/lib/admin-ui-locale";
 import { ensureAdminSettings, getAdminPinHash } from "@/lib/admin-settings";
 import { normalizeRecipeDisplayLocale } from "@/lib/recipe-display-locale";
 import { isRecipeViewLang } from "@/lib/recipe-translate-locales";
@@ -59,14 +60,15 @@ export async function adminLoginAction(
   _prev: AdminActionState,
   formData: FormData,
 ): Promise<AdminActionState> {
+  const err = adminServerErrors(adminUiLocaleFromFormData(formData));
   await ensureAdminSettings();
   const pin = String(formData.get("pin") ?? "").trim();
   if (!PIN_RE.test(pin)) {
-    return { error: "PIN muss genau 4 Ziffern sein." };
+    return { error: err.pinMustBe4 };
   }
   const pinHash = await getAdminPinHash();
   if (!verifyAdminPin(pin, pinHash)) {
-    return { error: "Falscher PIN." };
+    return { error: err.wrongPin };
   }
   await setAdminSessionCookie();
   redirect("/admin");
@@ -81,22 +83,23 @@ export async function adminChangePinAction(
   _prev: AdminActionState,
   formData: FormData,
 ): Promise<AdminActionState> {
+  const err = adminServerErrors(adminUiLocaleFromFormData(formData));
   if (!(await isAdminSessionValid())) {
-    return { error: "Sitzung abgelaufen. Bitte erneut anmelden." };
+    return { error: err.sessionExpired };
   }
   await ensureAdminSettings();
   const current = String(formData.get("currentPin") ?? "").trim();
   const nextPin = String(formData.get("newPin") ?? "").trim();
   const confirm = String(formData.get("confirmPin") ?? "").trim();
   if (!PIN_RE.test(current) || !PIN_RE.test(nextPin) || !PIN_RE.test(confirm)) {
-    return { error: "Alle PINs müssen genau 4 Ziffern sein." };
+    return { error: err.allPinsMustBe4 };
   }
   if (nextPin !== confirm) {
-    return { error: "Neue PIN und Wiederholung stimmen nicht überein." };
+    return { error: err.pinMismatch };
   }
   const pinHash = await getAdminPinHash();
   if (!verifyAdminPin(current, pinHash)) {
-    return { error: "Aktueller PIN ist falsch." };
+    return { error: err.currentPinWrong };
   }
   await prisma.adminSettings.update({
     where: { id: ADMIN_ROW_ID },
@@ -111,10 +114,11 @@ function revalidateAfterVoteChange() {
 
 export async function adminResetRecipeLikesAction(
   _prev: AdminVotesResetState,
-  _formData: FormData,
+  formData: FormData,
 ): Promise<AdminVotesResetState> {
+  const err = adminServerErrors(adminUiLocaleFromFormData(formData));
   if (!(await isAdminSessionValid())) {
-    return { error: "Sitzung abgelaufen. Bitte erneut anmelden." };
+    return { error: err.sessionExpired };
   }
   const { count } = await prisma.recipeVote.deleteMany({
     where: { type: RecipeVoteType.LIKE },
@@ -125,10 +129,11 @@ export async function adminResetRecipeLikesAction(
 
 export async function adminResetRecipeDislikesAction(
   _prev: AdminVotesResetState,
-  _formData: FormData,
+  formData: FormData,
 ): Promise<AdminVotesResetState> {
+  const err = adminServerErrors(adminUiLocaleFromFormData(formData));
   if (!(await isAdminSessionValid())) {
-    return { error: "Sitzung abgelaufen. Bitte erneut anmelden." };
+    return { error: err.sessionExpired };
   }
   const { count } = await prisma.recipeVote.deleteMany({
     where: { type: RecipeVoteType.DISLIKE },
@@ -139,10 +144,11 @@ export async function adminResetRecipeDislikesAction(
 
 export async function adminResetRecipeVotesAction(
   _prev: AdminVotesResetState,
-  _formData: FormData,
+  formData: FormData,
 ): Promise<AdminVotesResetState> {
+  const err = adminServerErrors(adminUiLocaleFromFormData(formData));
   if (!(await isAdminSessionValid())) {
-    return { error: "Sitzung abgelaufen. Bitte erneut anmelden." };
+    return { error: err.sessionExpired };
   }
   const { count } = await prisma.recipeVote.deleteMany({});
   revalidateAfterVoteChange();
@@ -153,14 +159,15 @@ export async function adminSaveThemeAction(
   _prev: AdminThemeActionState,
   formData: FormData,
 ): Promise<AdminThemeActionState> {
+  const err = adminServerErrors(adminUiLocaleFromFormData(formData));
   if (!(await isAdminSessionValid())) {
-    return { error: "Sitzung abgelaufen. Bitte erneut anmelden." };
+    return { error: err.sessionExpired };
   }
   const data: Partial<AdminThemeColors> = {};
   for (const key of THEME_KEYS) {
     const v = parseHex6(String(formData.get(key) ?? ""));
     if (!v) {
-      return { error: `Ungültige Farbe: „${key}“ muss als #RRGGBB angegeben werden.` };
+      return { error: err.invalidThemeColor(key) };
     }
     data[key] = v;
   }
@@ -175,10 +182,11 @@ export async function adminSaveThemeAction(
 
 export async function adminResetThemeAction(
   _prev: AdminThemeActionState,
-  _formData: FormData,
+  formData: FormData,
 ): Promise<AdminThemeActionState> {
+  const err = adminServerErrors(adminUiLocaleFromFormData(formData));
   if (!(await isAdminSessionValid())) {
-    return { error: "Sitzung abgelaufen. Bitte erneut anmelden." };
+    return { error: err.sessionExpired };
   }
   await prisma.adminSettings.update({
     where: { id: ADMIN_ROW_ID },
@@ -193,12 +201,13 @@ export async function adminSaveRecipeDisplayLocaleAction(
   _prev: AdminRecipeLocaleActionState,
   formData: FormData,
 ): Promise<AdminRecipeLocaleActionState> {
+  const err = adminServerErrors(adminUiLocaleFromFormData(formData));
   if (!(await isAdminSessionValid())) {
-    return { error: "Sitzung abgelaufen. Bitte erneut anmelden." };
+    return { error: err.sessionExpired };
   }
   const raw = String(formData.get("recipeDisplayLocale") ?? "").trim();
   if (!isRecipeViewLang(raw)) {
-    return { error: "Ungültige Anzeigesprache." };
+    return { error: err.invalidDisplayLocale };
   }
   await prisma.adminSettings.update({
     where: { id: ADMIN_ROW_ID },
@@ -211,10 +220,11 @@ export async function adminSaveRecipeDisplayLocaleAction(
 
 export async function adminBackfillRecipeTranslationsAction(
   _prev: AdminBackfillTranslationsState,
-  _formData: FormData,
+  formData: FormData,
 ): Promise<AdminBackfillTranslationsState> {
+  const err = adminServerErrors(adminUiLocaleFromFormData(formData));
   if (!(await isAdminSessionValid())) {
-    return { error: "Sitzung abgelaufen. Bitte erneut anmelden." };
+    return { error: err.sessionExpired };
   }
   await ensureAdminSettings();
   const row = await prisma.adminSettings.findUniqueOrThrow({
@@ -223,8 +233,7 @@ export async function adminBackfillRecipeTranslationsAction(
   const locale = normalizeRecipeDisplayLocale(row.recipeDisplayLocale);
   if (locale === "de") {
     return {
-      error:
-        "Für „Deutsch (Original)“ werden keine Übersetzungen gespeichert. Bitte zuerst eine andere Anzeigesprache wählen und speichern.",
+      error: err.backfillNeedsNonDe,
     };
   }
 

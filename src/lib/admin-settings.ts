@@ -3,9 +3,10 @@ import { hashAdminPin } from "@/lib/admin-pin";
 import type { AdminThemeColors } from "@/lib/admin-theme-defaults";
 import { normalizeRecipeDisplayLocale } from "@/lib/recipe-display-locale";
 import type { RecipeViewLang } from "@/lib/recipe-translate-locales";
+import { DEFAULT_ADMIN_PIN } from "@/lib/admin-constants";
 
 const ADMIN_ROW_ID = "default";
-export const DEFAULT_ADMIN_PIN = "0000";
+export { DEFAULT_ADMIN_PIN };
 
 export async function ensureAdminSettings() {
   const existing = await prisma.adminSettings.findUnique({

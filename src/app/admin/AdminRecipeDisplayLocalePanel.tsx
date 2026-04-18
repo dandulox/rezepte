@@ -8,15 +8,40 @@ import {
   type AdminBackfillTranslationsState,
   type AdminRecipeLocaleActionState,
 } from "@/app/admin/actions";
+import { AdminHiddenUiLocale } from "@/components/AdminHiddenUiLocale";
+import { useUiLocale } from "@/components/UiLocaleProvider";
 import { RECIPE_TRANSLATE_TARGETS } from "@/lib/recipe-translate-locales";
 import type { RecipeViewLang } from "@/lib/recipe-translate-locales";
+import type { SiteStrings } from "@/lib/site-i18n";
 
 const localeInitial: AdminRecipeLocaleActionState = {};
 const backfillInitial: AdminBackfillTranslationsState = {};
 
+function recipeTargetLabel(
+  code: string,
+  rd: SiteStrings["admin"]["recipeDisplay"],
+): string {
+  switch (code) {
+    case "en":
+      return rd.targetEn;
+    case "fr":
+      return rd.targetFr;
+    case "it":
+      return rd.targetIt;
+    case "es":
+      return rd.targetEs;
+    case "pl":
+      return rd.targetPl;
+    default:
+      return code;
+  }
+}
+
 export function AdminRecipeDisplayLocalePanel(props: {
   initialLocale: RecipeViewLang;
 }) {
+  const { strings: s } = useUiLocale();
+  const rd = s.admin.recipeDisplay;
   const router = useRouter();
   const selectId = useId();
   const [saveState, saveAction, savePending] = useActionState(
@@ -37,11 +62,8 @@ export function AdminRecipeDisplayLocalePanel(props: {
   return (
     <section className="admin-surface mb-8 space-y-4">
       <div>
-        <h2 className="text-lg font-medium text-foreground">Rezept-Anzeige</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Sprache für Rezepttexte (Titel, Zutaten, Schritte) auf allen Rezeptseiten. Übersetzungen werden
-          lokal gespeichert; ohne gespeicherte Übersetzung wird das deutsche Original angezeigt.
-        </p>
+        <h2 className="text-lg font-medium text-foreground">{rd.title}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{rd.hint}</p>
       </div>
 
       <form
@@ -49,9 +71,10 @@ export function AdminRecipeDisplayLocalePanel(props: {
         action={saveAction}
         className="space-y-3 border-t border-border pt-4"
       >
+        <AdminHiddenUiLocale />
         <div>
           <label htmlFor={selectId} className="mb-1 block text-sm font-medium text-label">
-            Anzeigesprache
+            {rd.displayLanguage}
           </label>
           <select
             id={selectId}
@@ -59,10 +82,10 @@ export function AdminRecipeDisplayLocalePanel(props: {
             defaultValue={props.initialLocale}
             className="input-field max-w-md w-full px-3 py-2 text-sm"
           >
-            <option value="de">Deutsch (Original)</option>
+            <option value="de">{rd.optionDe}</option>
             {RECIPE_TRANSLATE_TARGETS.map((t) => (
               <option key={t.code} value={t.code}>
-                {t.labelDe}
+                {recipeTargetLabel(t.code, rd)}
               </option>
             ))}
           </select>
@@ -74,11 +97,11 @@ export function AdminRecipeDisplayLocalePanel(props: {
         ) : null}
         {saveState.ok ? (
           <p className="text-sm text-[var(--admin-success-fg)]" role="status">
-            Anzeigesprache gespeichert.
+            {rd.saved}
           </p>
         ) : null}
         <button type="submit" disabled={savePending} className="admin-btn-primary">
-          {savePending ? "…" : "Speichern"}
+          {savePending ? "…" : rd.save}
         </button>
       </form>
 
@@ -86,19 +109,13 @@ export function AdminRecipeDisplayLocalePanel(props: {
         action={backfillAction}
         className="space-y-3 border-t border-border pt-4"
         onSubmit={(e) => {
-          if (
-            !window.confirm(
-              "Für alle Rezepte fehlende Übersetzungen in der aktuell gespeicherten Anzeigesprache erzeugen? Das kann je nach Anzahl der Rezepte und Übersetzungsdienst einige Minuten dauern und ruft einen externen Dienst auf.",
-            )
-          ) {
+          if (!window.confirm(rd.backfillConfirm)) {
             e.preventDefault();
           }
         }}
       >
-        <p className="text-sm text-muted-foreground">
-          Erzeugt fehlende Übersetzungen nur für die <strong>gespeicherte</strong> Anzeigesprache (nicht
-          Deutsch). Bereits vorhandene Übersetzungen werden übersprungen.
-        </p>
+        <AdminHiddenUiLocale />
+        <p className="text-sm text-muted-foreground">{rd.backfillHint}</p>
         {backfillState.error ? (
           <p className="text-sm text-red-600 dark:text-red-400" role="alert">
             {backfillState.error}
@@ -106,12 +123,15 @@ export function AdminRecipeDisplayLocalePanel(props: {
         ) : null}
         {backfillState.ok ? (
           <p className="text-sm text-[var(--admin-success-fg)]" role="status">
-            Fertig: {backfillState.created ?? 0} neu, {backfillState.skipped ?? 0} schon vorhanden
-            {backfillState.failed ? `, ${backfillState.failed} fehlgeschlagen` : ""}.
+            {rd.backfillDone(
+              backfillState.created ?? 0,
+              backfillState.skipped ?? 0,
+              backfillState.failed ?? 0,
+            )}
           </p>
         ) : null}
         <button type="submit" disabled={backfillPending} className="admin-btn-secondary">
-          {backfillPending ? "…" : "Fehlende Übersetzungen erzeugen"}
+          {backfillPending ? "…" : rd.backfillButton}
         </button>
       </form>
     </section>
