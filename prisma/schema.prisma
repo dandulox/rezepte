@@ -1,0 +1,126 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+/// Genau ein Datensatz mit id "default" — Admin-PIN (gehasht) und UI-Farben (#RRGGBB).
+model AdminSettings {
+  id      String @id
+  pinHash String
+
+  adminAccentLight      String @default("#4f46e5")
+  adminAccentLightHover String @default("#4338ca")
+  adminAccentLightFg    String @default("#fafafa")
+  adminSuccessLight     String @default("#4338ca")
+
+  adminAccentDark      String @default("#818cf8")
+  adminAccentDarkHover String @default("#a5b4fc")
+  adminAccentDarkFg    String @default("#18181b")
+  adminSuccessDark     String @default("#a5b4fc")
+}
+
+enum RecipeVoteType {
+  LIKE
+  DISLIKE
+}
+
+model Recipe {
+  id           String         @id @default(cuid())
+  title        String
+  /** z. B. hauptgericht, dessert — siehe RECIPE_CATEGORY_* in recipe-category.ts */
+  category     String?
+  /** vegan, vegetarisch, fleisch_* — siehe RECIPE_DIET_KIND_* in recipe-diet.ts */
+  dietKind     String?
+  description  String?
+  imageUrl     String?
+  /** ISO 8601 (z. B. PT20M) oder Freitext */
+  prepTime     String?
+  /** Koch-/Aktivzeit, ISO oder Freitext */
+  cookTime     String?
+  /** Gesamtzeit, ISO oder Freitext */
+  totalTime    String?
+  sourceUrl    String?
+  servingsBase Float          @default(4)
+  /// Freitext aus Import (z. B. Nährwerttabelle), eine Zeile pro Eintrag
+  nutritionText String?
+  instructions Json
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  ingredients  Ingredient[]
+  plannedMeals PlannedMeal[]
+  votes        RecipeVote[]
+  cookLogs     RecipeCookLog[]
+}
+
+/// Eintrag: Rezept wurde an einem Kalendertag (bzw. Zeitpunkt) gekocht.
+model RecipeCookLog {
+  id       String   @id @default(cuid())
+  recipeId String
+  recipe   Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  cookedAt DateTime @default(now())
+
+  @@index([recipeId])
+  @@index([cookedAt])
+}
+
+/// Jeder Klick erzeugt einen Eintrag; Like und Dislike sind getrennt und beliebig oft möglich.
+model RecipeVote {
+  id         String         @id @default(cuid())
+  recipeId   String
+  recipe     Recipe         @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  visitorKey String?
+  type       RecipeVoteType
+  createdAt  DateTime       @default(now())
+
+  @@index([recipeId])
+}
+
+model Ingredient {
+  id            String             @id @default(cuid())
+  recipeId      String
+  recipe        Recipe             @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  rawText       String
+  quantity      Float?
+  unit          String?
+  name          String?
+  sortOrder     Int                @default(0)
+  shoppingItems ShoppingListItem[]
+
+  @@index([recipeId])
+}
+
+/// Geplantes Gericht an einem Kalendertag (YYYY-MM-DD, lokales Datum)
+model PlannedMeal {
+  id            String             @id @default(cuid())
+  date          String
+  recipeId      String
+  recipe        Recipe             @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  createdAt     DateTime           @default(now())
+  shoppingItems ShoppingListItem[]
+
+  @@index([date])
+}
+
+/// Einkaufslisten-Eintrag, optional einer geplanten Mahlzeit + Zutatenzeile zugeordnet
+model ShoppingListItem {
+  id            String      @id @default(cuid())
+  /// Montag der Woche (YYYY-MM-DD), zu der die Liste gehört
+  weekStart     String
+  text          String
+  checked       Boolean     @default(false)
+  plannedMealId String
+  ingredientId  String
+  createdAt     DateTime    @default(now())
+  plannedMeal   PlannedMeal @relation(fields: [plannedMealId], references: [id], onDelete: Cascade)
+  ingredient    Ingredient  @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+
+  @@unique([plannedMealId, ingredientId])
+  @@index([weekStart])
+}

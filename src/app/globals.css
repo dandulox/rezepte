@@ -1,0 +1,119 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+  --background: #fafafa;
+  --foreground: #18181b;
+  --muted: #71717a;
+  --label: #3f3f46;
+  --body: #27272a;
+  --card: #ffffff;
+  --card-muted: #f4f4f5;
+  --border: #e4e4e7;
+  --border-strong: #d4d4d8;
+  --input: #ffffff;
+  --nav: rgb(255 255 255 / 0.85);
+  --nav-border: #e4e4e7;
+  --ring-card: rgb(228 228 231 / 0.65);
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #09090b;
+  --foreground: #fafafa;
+  --muted: #a1a1aa;
+  --label: #d4d4d8;
+  --body: #e4e4e7;
+  --card: #09090b;
+  --card-muted: #18181b;
+  --border: #27272a;
+  --border-strong: #3f3f46;
+  --input: #09090b;
+  --nav: rgb(9 9 11 / 0.85);
+  --nav-border: #27272a;
+  --ring-card: rgb(63 63 70 / 0.55);
+}
+
+/* Adminbereich: Akzente aus DB (--admin-accent-*-light/dark am Root von .admin-area gesetzt) */
+.admin-area {
+  --admin-accent: var(--admin-accent-light);
+  --admin-accent-hover: var(--admin-accent-hover-light);
+  --admin-accent-foreground: var(--admin-accent-foreground-light);
+  --admin-success-fg: var(--admin-success-fg-light);
+}
+
+.dark .admin-area {
+  --admin-accent: var(--admin-accent-dark);
+  --admin-accent-hover: var(--admin-accent-hover-dark);
+  --admin-accent-foreground: var(--admin-accent-foreground-dark);
+  --admin-success-fg: var(--admin-success-fg-dark);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted);
+  --color-label: var(--label);
+  --color-body: var(--body);
+  --color-card: var(--card);
+  --color-card-muted: var(--card-muted);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-input: var(--input);
+  --color-nav: var(--nav);
+  --color-nav-border: var(--nav-border);
+  --color-ring-card: var(--ring-card);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@layer base {
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-geist-sans), system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .input-field {
+    @apply rounded-lg border border-border-strong bg-input px-3 py-2 text-foreground shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30;
+  }
+
+  .admin-input {
+    @apply rounded-lg border border-border-strong bg-input px-3 py-2 text-foreground shadow-sm focus:outline-none focus:ring-2;
+    @apply focus:border-[var(--admin-accent)] focus:ring-[color-mix(in_oklab,var(--admin-accent)_32%,transparent)];
+  }
+
+  .admin-btn-primary {
+    @apply rounded-lg px-4 py-2 text-sm font-medium transition disabled:opacity-60;
+    background-color: var(--admin-accent);
+    color: var(--admin-accent-foreground);
+  }
+
+  .admin-btn-primary:hover:not(:disabled) {
+    background-color: var(--admin-accent-hover);
+  }
+
+  .admin-btn-secondary {
+    @apply rounded-lg border px-4 py-2 text-sm font-medium transition;
+    border-color: color-mix(in oklab, var(--admin-accent) 38%, var(--border-strong));
+    background-color: var(--card-muted);
+    color: var(--label);
+  }
+
+  .admin-btn-secondary:hover {
+    background-color: color-mix(in oklab, var(--admin-accent) 10%, var(--card-muted));
+    border-color: color-mix(in oklab, var(--admin-accent) 55%, var(--border-strong));
+  }
+
+  .admin-surface {
+    border-radius: 1rem;
+    border: 1px solid color-mix(in oklab, var(--admin-accent) 22%, var(--border));
+    background-color: var(--card);
+    padding: 1.5rem;
+    box-shadow: 0 1px 2px color-mix(in oklab, var(--admin-accent) 6%, transparent);
+  }
+}
