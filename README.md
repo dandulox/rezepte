@@ -16,7 +16,8 @@ Die Oberfläche ist auf **Deutsch** ausgerichtet (`lang="de"`).
 - **Einkauf** (`/plan/einkauf`): Aggregierte Liste zur Woche; **Druckansicht** unter `/plan/einkauf/druck`.
 - **Statistik** (`/statistik`): Auswertung der Koch-Historie.
 - **Reaktionen**: Like/Dislike pro Rezept (Cookie-basierte Besucherzuordnung möglich).
-- **Admin** (`/admin`): Nach PIN-Login u. a. Theme-Farben für den Admin-Bereich; PIN wird gehasht in der Datenbank gehalten. **Standard-PIN bei neuer/leerer Datenbank: `0000`** — in Produktion sofort ändern.
+- **Übersetzungen**: Auf der Rezeptdetailseite können gespeicherte Übersetzungen (z. B. Englisch, Französisch) angezeigt werden; fehlende Texte lassen sich per Button erzeugen und in der Datenbank ablegen. Ohne **LibreTranslate** wird ein öffentlicher Fallback (MyMemory) genutzt — für häufige Nutzung besser `LIBRETRANSLATE_URL` setzen (siehe Umgebungsvariablen).
+- **Admin** (`/admin`): Nach PIN-Login Theme-Farben, **Standard-Anzeigesprache** für Rezeptseiten (Original Deutsch vs. vorhandene Übersetzung) und weitere Einstellungen. PIN wird gehasht gespeichert. **Standard-PIN bei neuer/leerer Datenbank: `0000`** — in Produktion sofort ändern (`DEFAULT_ADMIN_PIN` in `src/lib/admin-constants.ts`).
 
 ## Technologie-Stack
 
@@ -54,6 +55,9 @@ Lege im Projektroot eine Datei **`.env`** an (nicht committen, wenn sie Geheimni
 | `DATABASE_URL` | ja | LibSQL-/SQLite-URL, z. B. lokale Datei: `file:./dev.db` (relativ zum Arbeitsverzeichnis beim Start) |
 | `ADMIN_SESSION_SECRET` | in **Produktion** ja | Mindestens **16 Zeichen**; signiert das Admin-Session-Cookie. In Development wird ein fester Fallback verwendet, wenn die Variable fehlt. |
 | `NEXT_ALLOWED_DEV_ORIGINS` | nein | Im Dev-Modus zusätzliche erlaubte Origins (komma- oder leerzeichengetrennt), z. B. wenn du über LAN-IP oder einen anderen Hostnamen erreichst. Ergänzt die in `next.config.ts` eingetragenen Standard-Origins. |
+| `LIBRETRANSLATE_URL` | nein | Basis-URL einer [LibreTranslate](https://libretranslate.com/)-Instanz (ohne abschließenden Slash). Wenn gesetzt, wird sie für Rezept-Übersetzungen bevorzugt; sonst MyMemory (Längen-/Tageslimits möglich). |
+| `LIBRETRANSLATE_API_KEY` | nein | API-Key, falls die LibreTranslate-Instanz einen verlangt. |
+| `RECIPE_TRANSLATE_SOURCE` | nein | ISO-Code der **Ausgangssprache** gespeicherter Rezepte für Übersetzungen (Standard: `de`). |
 
 Beispiel **`.env`** (nur Struktur, Werte anpassen):
 
@@ -61,6 +65,9 @@ Beispiel **`.env`** (nur Struktur, Werte anpassen):
 DATABASE_URL="file:./dev.db"
 ADMIN_SESSION_SECRET="mindestens-16-zeichen-lang"
 # NEXT_ALLOWED_DEV_ORIGINS="192.168.1.10 mein-pc.local"
+# LIBRETRANSLATE_URL="https://libretranslate.example.com"
+# LIBRETRANSLATE_API_KEY=""
+# RECIPE_TRANSLATE_SOURCE="de"
 ```
 
 ## Datenbank und Migrationen
@@ -89,7 +96,7 @@ npm run dev
 
 Die App läuft standardmäßig unter [http://localhost:3000](http://localhost:3000).
 
-**Admin-Zugang**: Unter `/admin/login` anmelden. Beim **ersten** Anlegen der Admin-Zeile in der Datenbank ist die Standard-PIN **`0000`** (siehe `DEFAULT_ADMIN_PIN` in `src/lib/admin-settings.ts`); sie sollte in Produktion umgehend geändert werden.
+**Admin-Zugang**: Unter `/admin/login` anmelden. Beim **ersten** Anlegen der Admin-Zeile in der Datenbank ist die Standard-PIN **`0000`** (siehe `DEFAULT_ADMIN_PIN` in `src/lib/admin-constants.ts`); sie sollte in Produktion umgehend geändert werden.
 
 ## Produktion
 
@@ -114,6 +121,7 @@ Tests liegen u. a. unter `src/lib/*.test.ts`; Konfiguration: `vitest.config.ts
 | Pfad | Inhalt |
 |------|--------|
 | `/` | Startseite (Rezeptübersicht) |
+| `/import` | Weiterleitung nach `/recipes/new?mode=import` |
 | `/recipes/new` | Neues Rezept; `?mode=import` für Import |
 | `/recipes/[id]` | Rezeptdetail |
 | `/recipes/[id]/edit` | Bearbeiten |

@@ -1,9 +1,13 @@
 /**
  * Rezept-Kategorien (Gerichtstyp), unabhängig von Zutaten-Gruppierung.
- * Werte entsprechen DB-Feld `Recipe.category`.
+ * Sichtbare Namen und Liste kommen aus `RecipeCategoryDef` (Admin).
+ * Heuristik für Import: `CATEGORY_MATCH_RULES` (Slug muss in DB existieren).
  */
 
-export const RECIPE_CATEGORY_IDS = [
+import type { RecipeCategoryDefPublic } from "@/lib/recipe-taxonomy";
+
+/** Slugs der Standard-Seed-Kategorien — für Tests & Import ohne DB-Kontext. */
+export const RECIPE_CATEGORY_SEED_IDS = [
   "hauptgericht",
   "vorspeise",
   "beilage",
@@ -17,40 +21,35 @@ export const RECIPE_CATEGORY_IDS = [
   "sonstiges",
 ] as const;
 
-export type RecipeCategoryId = (typeof RECIPE_CATEGORY_IDS)[number];
-
-export const RECIPE_CATEGORY_LABEL: Record<RecipeCategoryId, string> = {
-  hauptgericht: "Hauptgericht",
-  vorspeise: "Vorspeise",
-  beilage: "Beilage",
-  salat: "Salat",
-  suppe: "Suppe & Eintopf",
-  dessert: "Dessert",
-  backen: "Backen",
-  fruehstueck: "Frühstück & Brunch",
-  getraenk: "Getränk",
-  snack: "Snack",
-  sonstiges: "Sonstiges",
-};
-
-export const RECIPE_CATEGORY_LABEL_EN: Record<RecipeCategoryId, string> = {
-  hauptgericht: "Main course",
-  vorspeise: "Starter",
-  beilage: "Side dish",
-  salat: "Salad",
-  suppe: "Soup & stew",
-  dessert: "Dessert",
-  backen: "Baking",
-  fruehstueck: "Breakfast & brunch",
-  getraenk: "Drink",
-  snack: "Snack",
-  sonstiges: "Other",
-};
-
 export type RecipeCategoryLabelLocale = "de" | "en";
 
-export function isRecipeCategoryId(value: string): value is RecipeCategoryId {
-  return (RECIPE_CATEGORY_IDS as readonly string[]).includes(value);
+export function recipeCategoryLabelFromDefs(
+  id: string | null | undefined,
+  locale: RecipeCategoryLabelLocale,
+  defs: readonly RecipeCategoryDefPublic[],
+): string | null {
+  if (!id) return null;
+  const row = defs.find((d) => d.id === id);
+  return row ? (locale === "en" ? row.labelEn : row.labelDe) : null;
+}
+
+/** Anzeige: bekannte Slugs übersetzt, sonst Rohwert aus der DB. */
+export function displayRecipeCategoryLabel(
+  category: string | null | undefined,
+  locale: RecipeCategoryLabelLocale,
+  defs: readonly RecipeCategoryDefPublic[],
+): string | null {
+  if (!category?.trim()) return null;
+  const mapped = recipeCategoryLabelFromDefs(category, locale, defs);
+  if (mapped) return mapped;
+  return category.trim();
+}
+
+export function isRecipeCategoryInDefs(
+  value: string,
+  defs: readonly RecipeCategoryDefPublic[],
+): boolean {
+  return defs.some((d) => d.id === value);
 }
 
 /** Normalisiert für Muster-Vergleich (Kleinbuchstaben, Umlaute auf ASCII). */
@@ -62,7 +61,7 @@ export function foldRecipeCategoryText(s: string): string {
     .replace(/ß/g, "ss");
 }
 
-type CategoryRule = { id: RecipeCategoryId; patterns: RegExp[] };
+type CategoryRule = { id: string; patterns: RegExp[] };
 
 /** Reihenfolge: spezifischere Typen vor allgemeinen (erster Treffer zählt). */
 const CATEGORY_MATCH_RULES: CategoryRule[] = [
@@ -130,7 +129,7 @@ const CATEGORY_MATCH_RULES: CategoryRule[] = [
   },
 ];
 
-function matchCategoryInFolded(folded: string): RecipeCategoryId | null {
+function matchCategoryInFolded(folded: string): string | null {
   for (const { id, patterns } of CATEGORY_MATCH_RULES) {
     for (const re of patterns) {
       re.lastIndex = 0;
@@ -156,27 +155,43 @@ export function parseJsonLdRecipeCategory(raw: unknown): string | null {
   return null;
 }
 
-/** Ordnet ein freies Kategorie-Label (z. B. aus JSON-LD) einer festen Kategorie zu. */
-export function recipeCategoryFromLabel(label: string | null): RecipeCategoryId | null {
+/** Ordnet ein freies Kategorie-Label einer Slug zu, sofern in `validIds` erlaubt. */
+export function recipeCategoryFromLabel(
+  label: string | null,
+  validIds: Set<string>,
+): string | null {
   if (!label) return null;
   const folded = foldRecipeCategoryText(label);
-  if (isRecipeCategoryId(folded)) return folded;
-  return matchCategoryInFolded(folded);
+  if (validIds.has(folded)) return folded;
+  const matched = matchCategoryInFolded(folded);
+  if (matched && validIds.has(matched)) return matched;
+  return null;
 }
 
-export function inferRecipeCategoryFromBlob(text: string): RecipeCategoryId | null {
+export function inferRecipeCategoryFromBlob(
+  text: string,
+  validIds: Set<string>,
+): string | null {
   if (!text.trim()) return null;
-  return matchCategoryInFolded(foldRecipeCategoryText(text));
+  const matched = matchCategoryInFolded(foldRecipeCategoryText(text));
+  if (matched && validIds.has(matched)) return matched;
+  return null;
 }
 
-export function resolveImportedRecipeCategory(input: {
-  jsonLdRecipeCategory: unknown;
-  title: string;
-  description: string | null;
-  ingredients: string[];
-  instructions: string[];
-}): RecipeCategoryId | null {
-  const fromLd = recipeCategoryFromLabel(parseJsonLdRecipeCategory(input.jsonLdRecipeCategory));
+export function resolveImportedRecipeCategory(
+  input: {
+    jsonLdRecipeCategory: unknown;
+    title: string;
+    description: string | null;
+    ingredients: string[];
+    instructions: string[];
+  },
+  validIds: Set<string>,
+): string | null {
+  const fromLd = recipeCategoryFromLabel(
+    parseJsonLdRecipeCategory(input.jsonLdRecipeCategory),
+    validIds,
+  );
   if (fromLd) return fromLd;
   const blob = [
     input.title,
@@ -184,20 +199,5 @@ export function resolveImportedRecipeCategory(input: {
     ...input.ingredients,
     ...input.instructions,
   ].join("\n");
-  return inferRecipeCategoryFromBlob(blob);
-}
-
-/** Formularwert: leer oder gültige Slug. */
-export function recipeCategoryFromFormValue(raw: string): RecipeCategoryId | null {
-  const t = raw.trim();
-  if (!t) return null;
-  return isRecipeCategoryId(t) ? t : null;
-}
-
-export function recipeCategoryLabel(
-  id: string | null | undefined,
-  locale: RecipeCategoryLabelLocale = "de",
-): string | null {
-  if (!id || !isRecipeCategoryId(id)) return null;
-  return locale === "en" ? RECIPE_CATEGORY_LABEL_EN[id] : RECIPE_CATEGORY_LABEL[id];
+  return inferRecipeCategoryFromBlob(blob, validIds);
 }

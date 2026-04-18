@@ -10,6 +10,24 @@ datasource db {
   provider = "sqlite"
 }
 
+/// Verwaltbare Rezept-Kategorien (Slug = `Recipe.category`).
+model RecipeCategoryDef {
+  id        String @id
+  labelDe   String
+  labelEn   String
+  sortOrder Int    @default(0)
+}
+
+/// Verwaltbare Ernährungsarten (Slug = `Recipe.dietKind`).
+model RecipeDietKindDef {
+  id          String @id
+  labelDe     String
+  labelEn     String
+  sortOrder   Int    @default(0)
+  isMeat      Boolean @default(false)
+  searchExtra String  @default("")
+}
+
 /// Genau ein Datensatz mit id "default" — Admin-PIN (gehasht) und UI-Farben (#RRGGBB).
 model AdminSettings {
   id      String @id
