@@ -60,7 +60,7 @@ export function AdminRecipeDisplayLocalePanel(props: {
   }, [saveState.ok, backfillState.ok, router]);
 
   return (
-    <section className="admin-surface mb-8 space-y-4">
+    <section className="admin-surface space-y-4">
       <div>
         <h2 className="text-lg font-medium text-foreground">{rd.title}</h2>
         <p className="mt-1 text-sm text-muted-foreground">{rd.hint}</p>

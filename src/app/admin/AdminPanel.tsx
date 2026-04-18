@@ -23,8 +23,10 @@ const votesResetInitial: AdminVotesResetState = {};
 
 type AdminTab = "security" | "votes" | "appearance" | "taxonomy";
 
-const tabBtn =
-  "rounded-t-lg border-b-2 border-transparent px-3 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)]";
+const tabNavBtn =
+  "shrink-0 rounded-xl border px-3.5 py-2.5 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)] lg:flex lg:w-full lg:items-center lg:justify-start lg:text-left";
+const tabNavBtnStyle =
+  "border-transparent bg-card-muted/70 text-label hover:border-border hover:bg-card-muted hover:text-foreground data-[active]:border-[color-mix(in_oklab,var(--admin-accent)_42%,var(--border-strong))] data-[active]:bg-[color-mix(in_oklab,var(--admin-accent)_11%,var(--card))] data-[active]:text-[var(--admin-accent)] data-[active]:shadow-sm";
 
 type TaxonomyCategoryRow = {
   id: string;
@@ -93,79 +95,93 @@ export function AdminPanel({
   }, [changeState.ok]);
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-10">
-      <h1 className="text-2xl font-semibold tracking-tight text-[var(--admin-accent)]">
-        {p.title}
-      </h1>
-      <p className="mt-2 text-sm text-muted-foreground">{p.subtitle}</p>
+    <div className="admin-shell flex min-h-dvh flex-col">
+      <header className="border-b border-border/90 bg-card/75 backdrop-blur-md supports-[backdrop-filter]:bg-card/60">
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-6 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-semibold tracking-tight text-[var(--admin-accent)] sm:text-3xl">
+              {p.title}
+            </h1>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
+              {p.subtitle}
+            </p>
+          </div>
+          <form action={adminLogoutAction} className="shrink-0 sm:pt-1">
+            <button type="submit" className="admin-btn-secondary w-full sm:w-auto">
+              {p.logout}
+            </button>
+          </form>
+        </div>
+      </header>
 
-      <div
-        role="tablist"
-        aria-label={p.tabListAria}
-        className="mt-6 flex flex-wrap gap-1 border-b border-border"
-      >
-        <button
-          type="button"
-          role="tab"
-          id={securityTabId}
-          aria-controls={securityPanelId}
-          aria-selected={tab === "security"}
-          tabIndex={tab === "security" ? 0 : -1}
-          data-active={tab === "security" ? "true" : undefined}
-          className={`${tabBtn} text-label hover:text-foreground data-[active]:border-[var(--admin-accent)] data-[active]:text-[var(--admin-accent)]`}
-          onClick={() => setTab("security")}
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 lg:flex-row lg:items-start lg:gap-10">
+        <nav
+          role="tablist"
+          aria-label={p.tabListAria}
+          className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] lg:w-56 lg:shrink-0 lg:flex-col lg:gap-1.5 lg:overflow-visible lg:pb-0 lg:pt-1 [&::-webkit-scrollbar]:hidden"
         >
-          {p.tabSecurity}
-        </button>
-        <button
-          type="button"
-          role="tab"
-          id={votesTabId}
-          aria-controls={votesPanelId}
-          aria-selected={tab === "votes"}
-          tabIndex={tab === "votes" ? 0 : -1}
-          data-active={tab === "votes" ? "true" : undefined}
-          className={`${tabBtn} text-label hover:text-foreground data-[active]:border-[var(--admin-accent)] data-[active]:text-[var(--admin-accent)]`}
-          onClick={() => setTab("votes")}
-        >
-          {p.tabVotes}
-        </button>
-        <button
-          type="button"
-          role="tab"
-          id={appearanceTabId}
-          aria-controls={appearancePanelId}
-          aria-selected={tab === "appearance"}
-          tabIndex={tab === "appearance" ? 0 : -1}
-          data-active={tab === "appearance" ? "true" : undefined}
-          className={`${tabBtn} text-label hover:text-foreground data-[active]:border-[var(--admin-accent)] data-[active]:text-[var(--admin-accent)]`}
-          onClick={() => setTab("appearance")}
-        >
-          {p.tabAppearance}
-        </button>
-        <button
-          type="button"
-          role="tab"
-          id={taxonomyTabId}
-          aria-controls={taxonomyPanelId}
-          aria-selected={tab === "taxonomy"}
-          tabIndex={tab === "taxonomy" ? 0 : -1}
-          data-active={tab === "taxonomy" ? "true" : undefined}
-          className={`${tabBtn} text-label hover:text-foreground data-[active]:border-[var(--admin-accent)] data-[active]:text-[var(--admin-accent)]`}
-          onClick={() => setTab("taxonomy")}
-        >
-          {p.tabTaxonomy}
-        </button>
-      </div>
+          <button
+            type="button"
+            role="tab"
+            id={securityTabId}
+            aria-controls={securityPanelId}
+            aria-selected={tab === "security"}
+            tabIndex={tab === "security" ? 0 : -1}
+            data-active={tab === "security" ? "true" : undefined}
+            className={`${tabNavBtn} ${tabNavBtnStyle}`}
+            onClick={() => setTab("security")}
+          >
+            {p.tabSecurity}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            id={votesTabId}
+            aria-controls={votesPanelId}
+            aria-selected={tab === "votes"}
+            tabIndex={tab === "votes" ? 0 : -1}
+            data-active={tab === "votes" ? "true" : undefined}
+            className={`${tabNavBtn} ${tabNavBtnStyle}`}
+            onClick={() => setTab("votes")}
+          >
+            {p.tabVotes}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            id={appearanceTabId}
+            aria-controls={appearancePanelId}
+            aria-selected={tab === "appearance"}
+            tabIndex={tab === "appearance" ? 0 : -1}
+            data-active={tab === "appearance" ? "true" : undefined}
+            className={`${tabNavBtn} ${tabNavBtnStyle}`}
+            onClick={() => setTab("appearance")}
+          >
+            {p.tabAppearance}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            id={taxonomyTabId}
+            aria-controls={taxonomyPanelId}
+            aria-selected={tab === "taxonomy"}
+            tabIndex={tab === "taxonomy" ? 0 : -1}
+            data-active={tab === "taxonomy" ? "true" : undefined}
+            className={`${tabNavBtn} ${tabNavBtnStyle}`}
+            onClick={() => setTab("taxonomy")}
+          >
+            {p.tabTaxonomy}
+          </button>
+        </nav>
 
-      <div
-        role="tabpanel"
-        id={securityPanelId}
-        aria-labelledby={securityTabId}
-        hidden={tab !== "security"}
-        className="pt-6"
-      >
-        <section className="admin-surface">
+        <div className="admin-panel-main min-w-0 flex-1 p-6 sm:p-8">
+          <div
+            role="tabpanel"
+            id={securityPanelId}
+            aria-labelledby={securityTabId}
+            hidden={tab !== "security"}
+          >
+            <section className="admin-inset">
           <h2 className="text-lg font-medium text-foreground">{sec.title}</h2>
           <p className="mt-1 text-sm text-muted-foreground">{sec.hint}</p>
           <form ref={formRef} action={changeAction} className="mt-4 space-y-3">
@@ -229,17 +245,16 @@ export function AdminPanel({
               {changePending ? "…" : sec.savePin}
             </button>
           </form>
-        </section>
-      </div>
+            </section>
+          </div>
 
-      <div
-        role="tabpanel"
-        id={votesPanelId}
-        aria-labelledby={votesTabId}
-        hidden={tab !== "votes"}
-        className="pt-6"
-      >
-        <section className="admin-surface space-y-6">
+          <div
+            role="tabpanel"
+            id={votesPanelId}
+            aria-labelledby={votesTabId}
+            hidden={tab !== "votes"}
+          >
+            <section className="admin-inset space-y-6">
           <div>
             <h2 className="text-lg font-medium text-foreground">{v.sectionTitle}</h2>
             <p className="mt-1 text-sm text-muted-foreground">{v.sectionHint}</p>
@@ -346,38 +361,33 @@ export function AdminPanel({
               </button>
             </form>
           </div>
-        </section>
-      </div>
+            </section>
+          </div>
 
-      <div
-        role="tabpanel"
-        id={appearancePanelId}
-        aria-labelledby={appearanceTabId}
-        hidden={tab !== "appearance"}
-        className="pt-6"
-      >
-        <AdminRecipeDisplayLocalePanel initialLocale={initialRecipeDisplayLocale} />
-        <AdminAppearancePanel initial={initialAppearance} />
-      </div>
+          <div
+            role="tabpanel"
+            id={appearancePanelId}
+            aria-labelledby={appearanceTabId}
+            hidden={tab !== "appearance"}
+            className="space-y-6"
+          >
+            <AdminRecipeDisplayLocalePanel initialLocale={initialRecipeDisplayLocale} />
+            <AdminAppearancePanel initial={initialAppearance} />
+          </div>
 
-      <div
-        role="tabpanel"
-        id={taxonomyPanelId}
-        aria-labelledby={taxonomyTabId}
-        hidden={tab !== "taxonomy"}
-        className="pt-6"
-      >
-        <AdminTaxonomyPanel
-          initialCategories={initialCategoryDefs}
-          initialDietKinds={initialDietKindDefs}
-        />
+          <div
+            role="tabpanel"
+            id={taxonomyPanelId}
+            aria-labelledby={taxonomyTabId}
+            hidden={tab !== "taxonomy"}
+          >
+            <AdminTaxonomyPanel
+              initialCategories={initialCategoryDefs}
+              initialDietKinds={initialDietKindDefs}
+            />
+          </div>
+        </div>
       </div>
-
-      <form action={adminLogoutAction} className="mt-8">
-        <button type="submit" className="admin-btn-secondary">
-          {p.logout}
-        </button>
-      </form>
     </div>
   );
 }
