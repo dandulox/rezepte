@@ -136,4 +136,4 @@ prisma/
 
 ## Lizenz
 
-Privates Projekt (`"private": true` in `package.json`). Bei öffentlicher Veröffentlichung hier eine passende Lizenz ergänzen.
+Dieses Projekt steht unter der [MIT-Lizenz](LICENSE) (Open Source). Kurzfassung: Nutzung, Änderung und Weitergabe sind erlaubt; der Urheberrechtshinweis muss erhalten bleiben; es gibt keine Gewährleistung.
