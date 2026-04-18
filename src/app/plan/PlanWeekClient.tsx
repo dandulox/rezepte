@@ -187,7 +187,7 @@ function PlannedMealCompact({
         <div className="min-w-0 flex-1">
           <Link
             href={`/recipes/${meal.recipeId}`}
-            className="line-clamp-2 text-[11px] font-medium leading-snug text-emerald-800 hover:underline dark:text-emerald-400 sm:text-xs"
+            className="line-clamp-2 text-[11px] font-medium leading-snug text-[var(--app-accent)] hover:underline sm:text-xs"
           >
             {meal.recipe.title}
           </Link>
@@ -225,7 +225,17 @@ export function PlanWeekClient(props: {
     rect: DOMRectReadOnly;
   } | null>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
+  const { strings: s, locale } = useUiLocale();
   const weekStartDate = parseISODateLocal(props.weekStart);
+  const anchorDate = weekStartDate;
+  const prevWeekIso = toISODateLocal(addWeeks(anchorDate, -1));
+  const nextWeekIso = toISODateLocal(addWeeks(anchorDate, 1));
+  const planHint =
+    locale === "en"
+      ? "Three weeks — tap a day to add a recipe."
+      : "Drei Wochen — Tippen auf einen Tag, um ein Rezept zu planen.";
+  const prevWeekLabel = locale === "en" ? "← Previous week" : "← Vorherige Woche";
+  const nextWeekLabel = locale === "en" ? "Next week →" : "Nächste Woche →";
 
   const weekBlocks = useMemo(() => {
     return [0, 1, 2].map((offset) => {
@@ -292,10 +302,35 @@ export function PlanWeekClient(props: {
   }, [mealMenu]);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
-      <h1 className="mb-8 text-3xl font-semibold text-foreground">Wochenplan</h1>
+    <div className="app-area flex min-h-dvh flex-col">
+      <header className="border-b border-border/90 bg-card/75 backdrop-blur-md supports-[backdrop-filter]:bg-card/60">
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-6 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-semibold tracking-tight text-[var(--app-accent)] sm:text-3xl">
+              {s.nav.weekPlan}
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">{planHint}</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href={`/plan/einkauf?w=${props.weekStart}`}
+              className="app-btn-secondary"
+            >
+              {s.nav.shopping}
+            </Link>
+            <Link href={`/plan?w=${prevWeekIso}`} className="app-btn-ghost">
+              {prevWeekLabel}
+            </Link>
+            <Link href={`/plan?w=${nextWeekIso}`} className="app-btn-ghost">
+              {nextWeekLabel}
+            </Link>
+          </div>
+        </div>
+      </header>
 
-      <div className="min-w-0 flex-1 space-y-10">
+      <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
+        <div className="app-panel-main p-6 sm:p-8">
+          <div className="min-w-0 flex-1 space-y-10">
         {weekBlocks.map((block, blockIdx) => (
           <section key={block.mondayIso} className={blockIdx > 0 ? "border-t border-border pt-10" : ""}>
             <h2 className="mb-4 text-lg font-semibold text-foreground">
@@ -314,7 +349,7 @@ export function PlanWeekClient(props: {
                     <div
                       key={dayIso}
                       data-plan-day={dayIso}
-                      className="relative flex min-h-[160px] flex-col rounded-xl border border-border bg-card shadow-sm sm:min-h-[180px]"
+                      className="relative flex min-h-[160px] flex-col rounded-xl border border-border bg-card shadow-sm ring-1 ring-[color-mix(in_oklab,var(--app-accent)_12%,var(--ring-card))] sm:min-h-[180px]"
                     >
                       <button
                         type="button"
@@ -325,11 +360,11 @@ export function PlanWeekClient(props: {
                             m?.dateIso === dayIso ? null : { dateIso: dayIso, rect: r },
                           );
                         }}
-                        className="flex w-full flex-col items-center rounded-t-xl px-1 py-2 text-center transition hover:bg-card-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 disabled:opacity-50 sm:px-2 sm:py-2.5"
+                        className="flex w-full flex-col items-center rounded-t-xl px-1 py-2 text-center transition hover:bg-card-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_oklab,var(--app-accent)_40%,transparent)] disabled:opacity-50 sm:px-2 sm:py-2.5"
                         aria-expanded={menuOpen}
                         aria-haspopup="dialog"
                       >
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400 sm:text-xs">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--app-accent)] sm:text-xs">
                           {WEEKDAY_LABELS_DE[idx]}
                         </span>
                         <span className="text-xl font-semibold tabular-nums text-foreground sm:text-2xl">
@@ -364,6 +399,8 @@ export function PlanWeekClient(props: {
             </div>
           </section>
         ))}
+          </div>
+        </div>
       </div>
 
       {mealMenu ? (

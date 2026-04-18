@@ -17,6 +17,9 @@
   --nav: rgb(255 255 255 / 0.85);
   --nav-border: #e4e4e7;
   --ring-card: rgb(228 228 231 / 0.65);
+  /* Öffentliche Seiten (Favoriten, Plan, Einkauf): Emerald, konsistent mit UI */
+  --app-accent: #059669;
+  --app-accent-hover: #047857;
 }
 
 .dark {
@@ -34,6 +37,20 @@
   --nav: rgb(9 9 11 / 0.85);
   --nav-border: #27272a;
   --ring-card: rgb(63 63 70 / 0.55);
+  --app-accent: #34d399;
+  --app-accent-hover: #6ee7b7;
+}
+
+/* Öffentliche Bereiche: gleiche Kulisse wie Admin (Verlauf + Panels mit App-Akzent) */
+.app-area {
+  min-height: 100dvh;
+  background:
+    radial-gradient(
+      ellipse 90% 55% at 50% -15%,
+      color-mix(in oklab, var(--app-accent) 16%, transparent),
+      transparent 55%
+    ),
+    var(--background);
 }
 
 /* Adminbereich: Akzente aus DB (--admin-accent-*-light/dark am Root von .admin-area gesetzt) */
@@ -146,5 +163,52 @@
     box-shadow:
       0 1px 2px color-mix(in oklab, var(--admin-accent) 8%, transparent),
       0 12px 40px -12px color-mix(in oklab, var(--foreground) 12%, transparent);
+  }
+
+  .app-panel-main {
+    border-radius: 1.25rem;
+    border: 1px solid color-mix(in oklab, var(--app-accent) 14%, var(--border));
+    background-color: var(--card);
+    box-shadow:
+      0 1px 2px color-mix(in oklab, var(--app-accent) 8%, transparent),
+      0 12px 40px -12px color-mix(in oklab, var(--foreground) 12%, transparent);
+  }
+
+  .app-inset {
+    border-radius: 0.875rem;
+    border: 1px solid color-mix(in oklab, var(--border) 90%, var(--app-accent));
+    background-color: color-mix(in oklab, var(--card-muted) 65%, var(--card));
+    padding: 1.25rem 1.35rem;
+  }
+
+  @media (min-width: 640px) {
+    .app-inset {
+      padding: 1.5rem 1.65rem;
+    }
+  }
+
+  .app-btn-primary {
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium text-white transition disabled:opacity-60;
+    background-color: var(--app-accent);
+  }
+
+  .app-btn-primary:hover:not(:disabled) {
+    background-color: var(--app-accent-hover);
+  }
+
+  .app-btn-secondary {
+    @apply inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium transition;
+    border-color: color-mix(in oklab, var(--app-accent) 38%, var(--border-strong));
+    background-color: var(--card-muted);
+    color: var(--label);
+  }
+
+  .app-btn-secondary:hover {
+    background-color: color-mix(in oklab, var(--app-accent) 10%, var(--card-muted));
+    border-color: color-mix(in oklab, var(--app-accent) 55%, var(--border-strong));
+  }
+
+  .app-btn-ghost {
+    @apply inline-flex items-center justify-center rounded-lg border border-border-strong px-3 py-2 text-sm font-medium text-body transition hover:bg-card-muted;
   }
 }

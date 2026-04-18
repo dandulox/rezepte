@@ -37,38 +37,60 @@ export function FavoritenPageClient({
 
   if (!ready) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-10">
-        <p className="text-center text-muted-foreground">{s.favorites.loading}</p>
+      <div className="app-area flex min-h-dvh flex-col">
+        <header className="border-b border-border/90 bg-card/75 backdrop-blur-md supports-[backdrop-filter]:bg-card/60">
+          <div className="mx-auto max-w-6xl px-4 py-6">
+            <h1 className="text-2xl font-semibold tracking-tight text-[var(--app-accent)] sm:text-3xl">
+              {s.favorites.title}
+            </h1>
+          </div>
+        </header>
+        <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-8">
+          <div className="app-panel-main flex flex-1 items-center justify-center p-10 sm:p-12">
+            <p className="text-center text-muted-foreground">{s.favorites.loading}</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (favoriten.length === 0) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-10">
-        <h1 className="mb-2 text-3xl font-semibold tracking-tight text-foreground">
-          {s.favorites.title}
-        </h1>
-        <p className="mb-8 text-muted-foreground">{s.favorites.empty}</p>
-        <Link
-          href="/"
-          className="inline-flex rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700"
-        >
-          {s.favorites.toOverview}
-        </Link>
+      <div className="app-area flex min-h-dvh flex-col">
+        <header className="border-b border-border/90 bg-card/75 backdrop-blur-md supports-[backdrop-filter]:bg-card/60">
+          <div className="mx-auto max-w-6xl px-4 py-6">
+            <h1 className="text-2xl font-semibold tracking-tight text-[var(--app-accent)] sm:text-3xl">
+              {s.favorites.title}
+            </h1>
+            <p className="mt-2 max-w-xl text-sm text-muted-foreground">{s.favorites.empty}</p>
+          </div>
+        </header>
+        <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
+          <div className="app-panel-main p-6 sm:p-8">
+            <Link href="/" className="app-btn-primary">
+              {s.favorites.toOverview}
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10">
-      <h1 className="mb-2 text-3xl font-semibold tracking-tight text-foreground">
-        {s.favorites.title}
-      </h1>
-      <p className="mb-8 text-sm text-muted-foreground">
-        {s.favorites.countLine(favoriten.length)}
-      </p>
-      <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="app-area flex min-h-dvh flex-col">
+      <header className="border-b border-border/90 bg-card/75 backdrop-blur-md supports-[backdrop-filter]:bg-card/60">
+        <div className="mx-auto max-w-6xl px-4 py-6">
+          <h1 className="text-2xl font-semibold tracking-tight text-[var(--app-accent)] sm:text-3xl">
+            {s.favorites.title}
+          </h1>
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
+            {s.favorites.countLine(favoriten.length)}
+          </p>
+        </div>
+      </header>
+      <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
+        <div className="app-panel-main p-6 sm:p-8">
+          <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {favoriten.map((r) => {
           const v = voteCounts[r.id] ?? { likeCount: 0, dislikeCount: 0 };
           const catLabel = displayRecipeCategoryLabel(
@@ -80,7 +102,7 @@ export function FavoritenPageClient({
             <li key={r.id}>
               <Link
                 href={`/recipes/${r.id}`}
-                className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition hover:border-emerald-500/50 hover:shadow-md dark:hover:border-emerald-600/50"
+                className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition hover:border-[color-mix(in_oklab,var(--app-accent)_42%,var(--border))] hover:shadow-md"
               >
                 <div className="relative aspect-[4/3] w-full overflow-hidden bg-card-muted">
                   {r.imageUrl ? (
@@ -112,9 +134,7 @@ export function FavoritenPageClient({
                 <div className="flex flex-1 flex-col gap-2 p-4">
                   <h2 className="line-clamp-2 text-lg font-semibold text-foreground">{r.title}</h2>
                   {catLabel ? (
-                    <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
-                      {catLabel}
-                    </p>
+                    <p className="text-xs font-medium text-[var(--app-accent)]">{catLabel}</p>
                   ) : null}
                   <p className="text-sm text-muted-foreground">
                     {s.common.servingsIngredients(r.servingsBase, r.ingredients.length)}
@@ -124,7 +144,9 @@ export function FavoritenPageClient({
             </li>
           );
         })}
-      </ul>
+          </ul>
+        </div>
+      </div>
     </div>
   );
 }
