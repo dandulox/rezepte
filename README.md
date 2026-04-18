@@ -1,36 +1,139 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Rezeptbuch
 
-## Getting Started
+Web-App zum **Sammeln, Bearbeiten und Planen** eigener Rezepte: Import von Webseiten, Portionierung, Wochenplan, Einkaufsliste (inkl. Druckansicht), Favoriten, Reaktionen (Like/Dislike), Koch-Historie und ein geschützter **Admin-Bereich** für PIN und Erscheinungsbild.
 
-First, run the development server:
+Die Oberfläche ist auf **Deutsch** ausgerichtet (`lang="de"`).
+
+## Funktionen
+
+- **Rezepte**: Anlegen, bearbeiten, Kategorien und Ernährungsart (z. B. vegan/vegetarisch), Zeiten, Zutaten mit Mengen, Zubereitungsschritte, optionale Bild- und Quell-URL.
+- **Import**: Rezepte von URLs vorbefüllen (über `/import`, leitet nach `/recipes/new?mode=import` weiter).
+- **Startseite**: Übersicht mit Sortierung nach Aktivität, Stimmen und Koch-Statistiken.
+- **Favoriten**: Im **Browser** gespeichert (`localStorage`), nicht serverseitig.
+- **Wochenplan** (`/plan`): Mahlzeiten auf Tage legen.
+- **Einkauf** (`/plan/einkauf`): Aggregierte Liste zur Woche; **Druckansicht** unter `/plan/einkauf/druck`.
+- **Statistik** (`/statistik`): Auswertung der Koch-Historie.
+- **Reaktionen**: Like/Dislike pro Rezept (Cookie-basierte Besucherzuordnung möglich).
+- **Admin** (`/admin`): Nach PIN-Login u. a. Theme-Farben für den Admin-Bereich; PIN wird gehasht in der Datenbank gehalten.
+
+## Technologie-Stack
+
+| Bereich        | Technologie                                      |
+|----------------|--------------------------------------------------|
+| Framework      | [Next.js](https://nextjs.org/) 16 (App Router)   |
+| UI             | React 19, Tailwind CSS 4                         |
+| Datenbank      | SQLite über [Prisma](https://www.prisma.io/) 7 + [@libsql/client](https://github.com/tursodatabase/libsql-client-ts) |
+| Tests          | [Vitest](https://vitest.dev/)                    |
+| Import-Parsing | [cheerio](https://cheerio.js.org/)               |
+
+> Hinweis: Dieses Projekt nutzt eine **neuere Next.js-Version** mit möglichen Abweichungen zur älteren Dokumentation. Bei Unsicherheiten die mitgelieferten Docs unter `node_modules/next/dist/docs/` beachten.
+
+## Voraussetzungen
+
+- **Node.js** (empfohlen: aktuelle LTS-Version, z. B. 20 oder 22)
+- **npm** (oder kompatibler Paketmanager)
+
+## Installation
+
+```bash
+git clone <repository-url> rezepte
+cd rezepte
+npm install
+```
+
+`postinstall` führt automatisch **`prisma generate`** aus (Client nach `src/generated/prisma`).
+
+## Umgebungsvariablen
+
+Lege im Projektroot eine Datei **`.env`** an (nicht committen, wenn sie Geheimnisse enthält).
+
+| Variable | Pflicht | Beschreibung |
+|----------|---------|--------------|
+| `DATABASE_URL` | ja | LibSQL-/SQLite-URL, z. B. lokale Datei: `file:./dev.db` (relativ zum Arbeitsverzeichnis beim Start) |
+| `ADMIN_SESSION_SECRET` | in **Produktion** ja | Mindestens **16 Zeichen**; signiert das Admin-Session-Cookie. In Development wird ein fester Fallback verwendet, wenn die Variable fehlt. |
+| `NEXT_ALLOWED_DEV_ORIGINS` | nein | Im Dev-Modus zusätzliche erlaubte Origins (komma- oder leerzeichengetrennt), z. B. wenn du über LAN-IP oder einen anderen Hostnamen erreichst. Ergänzt die in `next.config.ts` eingetragenen Standard-Origins. |
+
+Beispiel **`.env`** (nur Struktur, Werte anpassen):
+
+```env
+DATABASE_URL="file:./dev.db"
+ADMIN_SESSION_SECRET="mindestens-16-zeichen-lang"
+# NEXT_ALLOWED_DEV_ORIGINS="192.168.1.10 mein-pc.local"
+```
+
+## Datenbank und Migrationen
+
+Schema und Migrationen liegen unter `prisma/`.
+
+**Erstmaliges Anlegen / Aktualisieren der Tabellen** (nach Klonen oder Schema-Änderung):
+
+```bash
+npx prisma migrate deploy
+```
+
+Für lokale Entwicklung mit neuen Migrationen (interaktiv):
+
+```bash
+npx prisma migrate dev
+```
+
+Die SQLite-Datei entsteht am Ort, den `DATABASE_URL` vorgibt (z. B. `./dev.db` im Projektroot bei `file:./dev.db`).
+
+## Entwicklung
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Die App läuft standardmäßig unter [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**Admin-Zugang**: Unter `/admin/login` anmelden. Beim **ersten** Anlegen der Admin-Zeile in der Datenbank ist die Standard-PIN **`0000`** (siehe `DEFAULT_ADMIN_PIN` in `src/lib/admin-settings.ts`); sie sollte in Produktion umgehend geändert werden.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Produktion
 
-## Learn More
+```bash
+npm run build
+npm start
+```
 
-To learn more about Next.js, take a look at the following resources:
+`build` führt `prisma generate` und `next build` aus. Vor dem ersten Start in Produktion Migrationen ausführen (`migrate deploy`) und alle erforderlichen Umgebungsvariablen setzen.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Qualitätssicherung
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run lint
+npm test
+```
 
-## Deploy on Vercel
+Tests liegen u. a. unter `src/lib/*.test.ts`; Konfiguration: `vitest.config.ts`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Wichtige Routen
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Pfad | Inhalt |
+|------|--------|
+| `/` | Startseite (Rezeptübersicht) |
+| `/recipes/new` | Neues Rezept; `?mode=import` für Import |
+| `/recipes/[id]` | Rezeptdetail |
+| `/recipes/[id]/edit` | Bearbeiten |
+| `/recipes/kategorien` | Kategorien |
+| `/favoriten` | Favoriten (lokal) |
+| `/plan`, `/plan/einkauf`, `/plan/einkauf/druck` | Planung & Einkauf |
+| `/statistik` | Koch-Statistik |
+| `/admin`, `/admin/login` | Administration |
+
+## Projektstruktur (Auszug)
+
+```
+src/
+  app/           # Next.js App Router: Seiten, Layout, API-Routen
+  components/    # React-Komponenten
+  lib/           # Hilfsfunktionen, Prisma-Zugriff, Domain-Logik
+  generated/     # Prisma Client (nach generate)
+prisma/
+  schema.prisma
+  migrations/
+```
+
+## Lizenz
+
+Privates Projekt (`"private": true` in `package.json`). Bei öffentlicher Veröffentlichung hier eine passende Lizenz ergänzen.
