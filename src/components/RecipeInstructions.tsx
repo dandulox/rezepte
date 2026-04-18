@@ -1,9 +1,21 @@
 type Props = {
   steps: string[];
+  /** Standard: „Zubereitung“ */
+  heading?: string;
+  /** Standard: „n Schritt(e)“ */
+  stepsCaption?: string;
 };
 
-export function RecipeInstructions({ steps }: Props) {
+export function RecipeInstructions({
+  steps,
+  heading = "Zubereitung",
+  stepsCaption,
+}: Props) {
   if (steps.length === 0) return null;
+
+  const caption =
+    stepsCaption ??
+    `${steps.length} ${steps.length === 1 ? "Schritt" : "Schritte"}`;
 
   return (
     <section
@@ -15,11 +27,9 @@ export function RecipeInstructions({ steps }: Props) {
           id="recipe-instructions-heading"
           className="text-xl font-semibold tracking-tight text-foreground"
         >
-          Zubereitung
+          {heading}
         </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {steps.length} {steps.length === 1 ? "Schritt" : "Schritte"}
-        </p>
+        <p className="mt-1 text-sm text-muted-foreground">{caption}</p>
       </div>
 
       <ol className="m-0 list-none space-y-0 p-0">

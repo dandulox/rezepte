@@ -5,6 +5,20 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
+function translationIngredientsFromJson(
+  raw: unknown,
+): { id: string; rawText: string }[] {
+  if (!Array.isArray(raw)) return [];
+  const out: { id: string; rawText: string }[] = [];
+  for (const row of raw) {
+    if (!row || typeof row !== "object") continue;
+    const o = row as Record<string, unknown>;
+    if (typeof o.id !== "string" || typeof o.rawText !== "string") continue;
+    out.push({ id: o.id, rawText: o.rawText });
+  }
+  return out;
+}
+
 export default async function RecipeDetailPage({
   params,
 }: {
@@ -19,6 +33,21 @@ export default async function RecipeDetailPage({
   });
 
   if (!recipe) notFound();
+
+  const translationRows = await prisma.recipeTranslation.findMany({
+    where: { recipeId: id },
+  });
+
+  const translations = translationRows.map((t) => ({
+    locale: t.locale,
+    title: t.title,
+    description: t.description,
+    nutritionText: t.nutritionText,
+    instructions: Array.isArray(t.instructions)
+      ? (t.instructions as unknown[]).map((x) => String(x))
+      : [],
+    ingredients: translationIngredientsFromJson(t.ingredients),
+  }));
 
   const [likeCount, dislikeCount, cookCount, cookRecent] = await Promise.all([
     prisma.recipeVote.count({
@@ -44,6 +73,7 @@ export default async function RecipeDetailPage({
 
   return (
     <RecipeDetailClient
+      key={recipe.id}
       recipeId={recipe.id}
       title={recipe.title}
       category={recipe.category}
@@ -58,6 +88,7 @@ export default async function RecipeDetailPage({
       ingredients={recipe.ingredients}
       nutritionText={recipe.nutritionText}
       instructions={instructions}
+      translations={translations}
       likeCount={likeCount}
       dislikeCount={dislikeCount}
       cookCount={cookCount}

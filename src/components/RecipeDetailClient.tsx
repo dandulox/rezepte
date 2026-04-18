@@ -1,13 +1,21 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { translateRecipeAction } from "@/app/recipes/translate-recipe-action";
 import {
   INGREDIENT_GROUP_LABEL,
   groupIngredientsForDisplay,
   type IngredientGroupId,
 } from "@/lib/ingredient-category";
 import { displayIngredientLine } from "@/lib/portion-scale";
+import {
+  RECIPE_TRANSLATE_TARGETS,
+  isRecipeViewLang,
+  type RecipeViewLang,
+} from "@/lib/recipe-translate-locales";
+import { recipeViewStepsCaption, recipeViewStrings } from "@/lib/recipe-view-i18n";
 import { RecipeReactions } from "@/components/RecipeReactions";
 import { RecipeInstructions } from "@/components/RecipeInstructions";
 import { RecipeCookLogPanel } from "@/components/RecipeCookLogPanel";
@@ -16,6 +24,15 @@ import { RecipeFavoriteButton } from "@/components/RecipeFavoriteButton";
 import { RecipeTimes } from "@/components/RecipeTimes";
 import { recipeCategoryLabel } from "@/lib/recipe-category";
 import { recipeDietKindLabel } from "@/lib/recipe-diet";
+
+export type RecipeTranslationPayload = {
+  locale: string;
+  title: string;
+  description: string | null;
+  nutritionText: string | null;
+  instructions: string[];
+  ingredients: { id: string; rawText: string }[];
+};
 
 function RecipeIngredientsPanel(props: {
   servingsBase: number;
@@ -28,22 +45,31 @@ function RecipeIngredientsPanel(props: {
   }[];
   factor: number;
   nutritionLines: string[];
+  labels: {
+    ingredients: string;
+    nutrition: string;
+    tabListAria: string;
+    servings: string;
+    decreaseServings: string;
+    increaseServings: string;
+  };
 }) {
   const [panel, setPanel] = useState<"ingredients" | "nutrition">("ingredients");
   const hasNutrition = props.nutritionLines.length > 0;
+  const L = props.labels;
 
   return (
     <section className="rounded-2xl border border-border bg-card p-4 shadow-md ring-1 ring-ring-card dark:shadow-xl sm:p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
         <div className="flex min-w-0 flex-wrap items-center gap-3">
           <h2 className="text-xl font-semibold text-foreground">
-            {hasNutrition && panel === "nutrition" ? "Nährwerte" : "Zutaten"}
+            {hasNutrition && panel === "nutrition" ? L.nutrition : L.ingredients}
           </h2>
           {hasNutrition ? (
             <div
               className="flex shrink-0 rounded-lg border border-border bg-card-muted p-0.5"
               role="tablist"
-              aria-label="Zutaten oder Nährwerte"
+              aria-label={L.tabListAria}
             >
               <button
                 type="button"
@@ -56,7 +82,7 @@ function RecipeIngredientsPanel(props: {
                 }
                 onClick={() => setPanel("ingredients")}
               >
-                Zutaten
+                {L.ingredients}
               </button>
               <button
                 type="button"
@@ -69,19 +95,19 @@ function RecipeIngredientsPanel(props: {
                 }
                 onClick={() => setPanel("nutrition")}
               >
-                Nährwerte
+                {L.nutrition}
               </button>
             </div>
           ) : null}
         </div>
         {panel === "ingredients" ? (
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Portionen</span>
+            <span className="text-sm text-muted-foreground">{L.servings}</span>
             <button
               type="button"
               onClick={() => props.adjust(-0.5)}
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border-strong text-lg font-medium text-body hover:bg-card-muted sm:h-9 sm:w-9"
-              aria-label="Portionen verringern"
+              aria-label={L.decreaseServings}
             >
               −
             </button>
@@ -100,7 +126,7 @@ function RecipeIngredientsPanel(props: {
               type="button"
               onClick={() => props.adjust(0.5)}
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border-strong text-lg font-medium text-body hover:bg-card-muted sm:h-9 sm:w-9"
-              aria-label="Portionen erhöhen"
+              aria-label={L.increaseServings}
             >
               +
             </button>
@@ -154,12 +180,62 @@ export function RecipeDetailClient(props: {
   ingredients: { id: string; rawText: string }[];
   nutritionText: string | null;
   instructions: string[];
+  translations: RecipeTranslationPayload[];
   likeCount: number;
   dislikeCount: number;
   cookCount: number;
   cookRecent: { id: string; cookedAt: string }[];
 }) {
+  const router = useRouter();
+  const [pendingTranslate, startTranslate] = useTransition();
+  const [translateError, setTranslateError] = useState<string | null>(null);
+  const [viewLang, setViewLang] = useState<RecipeViewLang>("de");
+
   const [servings, setServings] = useState(() => props.servingsBase);
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(`recipeViewLang:${props.recipeId}`);
+      if (raw && isRecipeViewLang(raw)) {
+        queueMicrotask(() => setViewLang(raw));
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [props.recipeId]);
+
+  const ui = recipeViewStrings(viewLang);
+  const activeTranslation =
+    viewLang === "de"
+      ? undefined
+      : props.translations.find((t) => t.locale === viewLang);
+  const hasTranslationCache = Boolean(activeTranslation);
+
+  const displayTitle = activeTranslation?.title ?? props.title;
+  const displayDescription = activeTranslation?.description ?? props.description;
+  const displayNutritionText =
+    activeTranslation?.nutritionText ?? props.nutritionText;
+
+  const ingredientsForDisplay = useMemo(() => {
+    if (!activeTranslation) return props.ingredients;
+    const map = new Map(
+      activeTranslation.ingredients.map((i) => [i.id, i.rawText]),
+    );
+    return props.ingredients.map((ing) => ({
+      ...ing,
+      rawText: map.get(ing.id) ?? ing.rawText,
+    }));
+  }, [props.ingredients, activeTranslation]);
+
+  const displayInstructions = useMemo(() => {
+    if (!activeTranslation) return props.instructions;
+    if (activeTranslation.instructions.length !== props.instructions.length) {
+      return props.instructions.map(
+        (orig, i) => activeTranslation.instructions[i] ?? orig,
+      );
+    }
+    return activeTranslation.instructions;
+  }, [props.instructions, activeTranslation]);
 
   const factor = useMemo(() => {
     if (!props.servingsBase || props.servingsBase <= 0) return 1;
@@ -171,18 +247,27 @@ export function RecipeDetailClient(props: {
   }
 
   const ingredientGroups = useMemo(
-    () => groupIngredientsForDisplay(props.ingredients),
-    [props.ingredients],
+    () => groupIngredientsForDisplay(ingredientsForDisplay),
+    [ingredientsForDisplay],
   );
 
   const nutritionLines = useMemo(
     () =>
-      (props.nutritionText ?? "")
+      (displayNutritionText ?? "")
         .split(/\n/)
         .map((s) => s.trim())
         .filter(Boolean),
-    [props.nutritionText],
+    [displayNutritionText],
   );
+
+  const panelLabels = {
+    ingredients: ui.ingredients,
+    nutrition: ui.nutrition,
+    tabListAria: ui.tabListAria,
+    servings: ui.servings,
+    decreaseServings: ui.decreaseServings,
+    increaseServings: ui.increaseServings,
+  };
 
   const panelProps = {
     servingsBase: props.servingsBase,
@@ -192,17 +277,23 @@ export function RecipeDetailClient(props: {
     ingredientGroups,
     factor,
     nutritionLines,
+    labels: panelLabels,
   };
 
   const categoryText = recipeCategoryLabel(props.category);
   const dietText = recipeDietKindLabel(props.dietKind);
 
+  const articleLang = viewLang === "de" ? "de" : viewLang;
+
   return (
-    <article className="mx-auto max-w-6xl py-6 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] sm:py-8">
+    <article
+      lang={articleLang}
+      className="mx-auto max-w-6xl py-6 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] sm:py-8"
+    >
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-            {props.title}
+            {displayTitle}
           </h1>
           {categoryText || dietText ? (
             <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium text-emerald-700 dark:text-emerald-400">
@@ -222,10 +313,80 @@ export function RecipeDetailClient(props: {
             href={`/recipes/${props.recipeId}/edit`}
             className="rounded-lg border border-border-strong px-3 py-1.5 text-sm font-medium text-body transition hover:bg-card-muted"
           >
-            Bearbeiten
+            {ui.edit}
           </Link>
         </div>
       </div>
+
+      <section className="mb-8 rounded-2xl border border-border bg-card-muted/60 p-4 ring-1 ring-ring-card sm:p-5">
+        <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {ui.translationBar}
+        </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+          <label className="flex min-w-[12rem] flex-col gap-1">
+            <span className="text-xs font-medium text-muted-foreground">
+              {ui.languageLabel}
+            </span>
+            <select
+              value={viewLang}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (!isRecipeViewLang(v)) return;
+                setTranslateError(null);
+                setViewLang(v);
+                try {
+                  sessionStorage.setItem(`recipeViewLang:${props.recipeId}`, v);
+                } catch {
+                  /* ignore */
+                }
+              }}
+              className="input-field w-full px-3 py-2 text-sm"
+            >
+              <option value="de">{ui.optionOriginal}</option>
+              {RECIPE_TRANSLATE_TARGETS.map((t) => (
+                <option key={t.code} value={t.code}>
+                  {t.labelDe}
+                </option>
+              ))}
+            </select>
+          </label>
+          {viewLang !== "de" && !hasTranslationCache ? (
+            <button
+              type="button"
+              disabled={pendingTranslate}
+              onClick={() => {
+                setTranslateError(null);
+                startTranslate(() => {
+                  void (async () => {
+                    const res = await translateRecipeAction(
+                      props.recipeId,
+                      viewLang,
+                    );
+                    if (!res.ok) {
+                      setTranslateError(res.error);
+                      return;
+                    }
+                    router.refresh();
+                  })();
+                });
+              }}
+              className="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-60 sm:py-2"
+            >
+              {pendingTranslate ? ui.translating : ui.translateButton}
+            </button>
+          ) : null}
+        </div>
+        {viewLang !== "de" && !hasTranslationCache ? (
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            {ui.translateHintNoCache}
+          </p>
+        ) : null}
+        {translateError ? (
+          <p className="mt-3 text-sm text-red-600 dark:text-red-400" role="alert">
+            {ui.translateErrorPrefix}: {translateError}
+          </p>
+        ) : null}
+      </section>
 
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_min(100%,20rem)] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_22rem] xl:gap-12">
         <div className="min-w-0 space-y-8">
@@ -258,11 +419,16 @@ export function RecipeDetailClient(props: {
             prepTime={props.prepTime}
             cookTime={props.cookTime}
             totalTime={props.totalTime}
+            labels={{
+              prep: ui.prepTime,
+              cook: ui.cookTime,
+              total: ui.totalTime,
+            }}
           />
 
-          {props.description ? (
+          {displayDescription ? (
             <p className="text-lg leading-relaxed text-label">
-              {props.description}
+              {displayDescription}
             </p>
           ) : null}
 
@@ -275,7 +441,14 @@ export function RecipeDetailClient(props: {
             />
           </div>
 
-          <RecipeInstructions steps={props.instructions} />
+          <RecipeInstructions
+            steps={displayInstructions}
+            heading={ui.preparation}
+            stepsCaption={recipeViewStepsCaption(
+              viewLang,
+              displayInstructions.length,
+            )}
+          />
         </div>
 
         <aside className="relative mt-8 hidden min-w-0 lg:mt-0 lg:block">
@@ -298,7 +471,7 @@ export function RecipeDetailClient(props: {
             rel="noopener noreferrer"
             className="text-sm text-emerald-700 underline-offset-4 hover:underline dark:text-emerald-400"
           >
-            Zur Originalquelle
+            {ui.sourceLink}
           </a>
         </div>
       ) : null}

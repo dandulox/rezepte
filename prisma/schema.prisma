@@ -53,10 +53,31 @@ model Recipe {
   instructions Json
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
-  ingredients  Ingredient[]
-  plannedMeals PlannedMeal[]
-  votes        RecipeVote[]
-  cookLogs     RecipeCookLog[]
+  ingredients   Ingredient[]
+  plannedMeals  PlannedMeal[]
+  votes         RecipeVote[]
+  cookLogs      RecipeCookLog[]
+  translations  RecipeTranslation[]
+}
+
+/// Gecachte maschinelle Übersetzung (Zielsprache → Inhalt). Original bleibt in `Recipe`.
+model RecipeTranslation {
+  id            String   @id @default(cuid())
+  recipeId      String
+  recipe        Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  /// BCP-47-artig klein, z. B. en, fr, it
+  locale        String
+  title         String
+  description   String?
+  nutritionText String?
+  instructions  Json
+  /// [{ "id": "…", "rawText": "…" }] in gleicher Reihenfolge wie Originalzutaten
+  ingredients   Json
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([recipeId, locale])
+  @@index([recipeId])
 }
 
 /// Eintrag: Rezept wurde an einem Kalendertag (bzw. Zeitpunkt) gekocht.
