@@ -4,6 +4,8 @@ Web-App zum **Sammeln, Bearbeiten und Planen** eigener Rezepte: Import von Webse
 
 Die Oberfläche ist auf **Deutsch** ausgerichtet (`lang="de"`).
 
+![alt text](https://github.com/dandulox/rezepte/blob/main/startseite.png "Logo")
+
 ## Funktionen
 
 - **Rezepte**: Anlegen, bearbeiten, Kategorien und Ernährungsart (z. B. vegan/vegetarisch), Zeiten, Zutaten mit Mengen, Zubereitungsschritte, optionale Bild- und Quell-URL.
