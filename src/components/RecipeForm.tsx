@@ -1,21 +1,16 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import type { RecipeFormState } from "@/app/recipes/actions";
 import {
   createRecipeAction,
   updateRecipeAction,
 } from "@/app/recipes/actions";
-import {
-  RECIPE_CATEGORY_IDS,
-  RECIPE_CATEGORY_LABEL,
-  type RecipeCategoryId,
-} from "@/lib/recipe-category";
-import {
-  RECIPE_DIET_KIND_IDS,
-  RECIPE_DIET_KIND_LABEL,
-  type RecipeDietKindId,
-} from "@/lib/recipe-diet";
+import type {
+  RecipeCategoryDefPublic,
+  RecipeDietKindDefPublic,
+} from "@/lib/recipe-taxonomy";
+import { sortRecipeCategoryDefs, sortRecipeDietKindDefs } from "@/lib/recipe-taxonomy-sort";
 
 export type RecipeFormInitial = {
   title: string;
@@ -26,8 +21,8 @@ export type RecipeFormInitial = {
   totalTime: string;
   sourceUrl: string;
   servingsBase: number;
-  category: RecipeCategoryId | null;
-  dietKind: RecipeDietKindId | null;
+  category: string | null;
+  dietKind: string | null;
   ingredients: string[];
   /** Eine Zeile pro Nährwert; optional */
   nutritionText: string;
@@ -54,8 +49,18 @@ export function RecipeForm(props: {
   mode: "create" | "edit";
   recipeId?: string;
   initial?: Partial<RecipeFormInitial>;
+  categoryDefs: readonly RecipeCategoryDefPublic[];
+  dietKindDefs: readonly RecipeDietKindDefPublic[];
 }) {
   const init = { ...empty, ...props.initial };
+  const categoryOptions = useMemo(
+    () => sortRecipeCategoryDefs(props.categoryDefs),
+    [props.categoryDefs],
+  );
+  const dietKindOptions = useMemo(
+    () => sortRecipeDietKindDefs(props.dietKindDefs),
+    [props.dietKindDefs],
+  );
   const ingredientsText = (init.ingredients.length ? init.ingredients : [""]).join("\n");
   const instructionsText = (init.instructions.length ? init.instructions : [""]).join("\n");
   const [ingredientPanel, setIngredientPanel] = useState<"ingredients" | "nutrition">(
@@ -197,9 +202,9 @@ export function RecipeForm(props: {
           className="input-field"
         >
           <option value="">— keine —</option>
-          {RECIPE_CATEGORY_IDS.map((id) => (
-            <option key={id} value={id}>
-              {RECIPE_CATEGORY_LABEL[id]}
+          {categoryOptions.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.labelDe}
             </option>
           ))}
         </select>
@@ -216,9 +221,9 @@ export function RecipeForm(props: {
           className="input-field"
         >
           <option value="">— keine —</option>
-          {RECIPE_DIET_KIND_IDS.map((id) => (
-            <option key={id} value={id}>
-              {RECIPE_DIET_KIND_LABEL[id]}
+          {dietKindOptions.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.labelDe}
             </option>
           ))}
         </select>

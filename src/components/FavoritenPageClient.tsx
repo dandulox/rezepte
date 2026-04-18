@@ -7,15 +7,26 @@ import { RecipeDietImageBadge } from "@/components/RecipeDietBadge";
 import { useRecipeFavorites } from "@/components/RecipeFavoritesProvider";
 import { useUiLocale } from "@/components/UiLocaleProvider";
 import type { HomeRecipe } from "@/components/HomePageClient";
-import { recipeCategoryLabel } from "@/lib/recipe-category";
+import { displayRecipeCategoryLabel } from "@/lib/recipe-category";
+import type {
+  RecipeCategoryDefPublic,
+  RecipeDietKindDefPublic,
+} from "@/lib/recipe-taxonomy";
 import type { RecipeVoteCounts } from "@/lib/recipe-votes";
 
 type Props = {
   recipes: HomeRecipe[];
   voteCounts: Record<string, RecipeVoteCounts>;
+  categoryDefs: readonly RecipeCategoryDefPublic[];
+  dietKindDefs: readonly RecipeDietKindDefPublic[];
 };
 
-export function FavoritenPageClient({ recipes, voteCounts }: Props) {
+export function FavoritenPageClient({
+  recipes,
+  voteCounts,
+  categoryDefs,
+  dietKindDefs,
+}: Props) {
   const { locale, strings: s } = useUiLocale();
   const { ready, favoriteIdSet } = useRecipeFavorites();
 
@@ -60,7 +71,11 @@ export function FavoritenPageClient({ recipes, voteCounts }: Props) {
       <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {favoriten.map((r) => {
           const v = voteCounts[r.id] ?? { likeCount: 0, dislikeCount: 0 };
-          const catLabel = recipeCategoryLabel(r.category, locale);
+          const catLabel = displayRecipeCategoryLabel(
+            r.category,
+            locale === "en" ? "en" : "de",
+            categoryDefs,
+          );
           return (
             <li key={r.id}>
               <Link
@@ -80,7 +95,7 @@ export function FavoritenPageClient({ recipes, voteCounts }: Props) {
                       {s.common.noImage}
                     </div>
                   )}
-                  <RecipeDietImageBadge dietKind={r.dietKind} />
+                  <RecipeDietImageBadge dietKind={r.dietKind} dietKindDefs={dietKindDefs} />
                   <RecipeFavoriteButton recipeId={r.id} layout="overlay" />
                   <div
                     className="pointer-events-none absolute bottom-2 right-2 flex items-center gap-2 rounded-lg bg-black/60 px-2.5 py-1 text-xs font-medium text-white shadow-md backdrop-blur-[2px] sm:text-sm"

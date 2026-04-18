@@ -21,12 +21,18 @@ import {
   toISODateLocal,
   WEEKDAY_LABELS_DE,
 } from "@/lib/week";
-import { recipeCategoryLabel } from "@/lib/recipe-category";
+import { displayRecipeCategoryLabel } from "@/lib/recipe-category";
+import { useUiLocale } from "@/components/UiLocaleProvider";
+import type { RecipeCategoryDefPublic } from "@/lib/recipe-taxonomy";
 import type { PlanWeekClientMeal } from "./types";
 import { addPlannedMealAction, removePlannedMealAction } from "./actions";
 
-function categoryLine(category: string | null): string | null {
-  const label = recipeCategoryLabel(category);
+function categoryLine(
+  category: string | null,
+  locale: "de" | "en",
+  defs: readonly RecipeCategoryDefPublic[],
+): string | null {
+  const label = displayRecipeCategoryLabel(category, locale, defs);
   if (label) return label;
   const raw = category?.trim();
   return raw || null;
@@ -51,6 +57,7 @@ const DayRecipePicker = forwardRef(function DayRecipePicker(
     pending,
     onPick,
     onClose,
+    categoryDefs,
   }: {
     dateIso: string;
     anchorRect: DOMRectReadOnly;
@@ -58,9 +65,12 @@ const DayRecipePicker = forwardRef(function DayRecipePicker(
     pending: boolean;
     onPick: (date: string, recipeId: string) => void;
     onClose: () => void;
+    categoryDefs: readonly RecipeCategoryDefPublic[];
   },
   ref: Ref<HTMLDivElement>,
 ) {
+  const { locale } = useUiLocale();
+  const loc = locale === "en" ? "en" : "de";
   const width = Math.min(Math.max(anchorRect.width, 240), 340);
   const left = Math.max(
     8,
@@ -93,7 +103,7 @@ const DayRecipePicker = forwardRef(function DayRecipePicker(
       ) : (
         <ul className="min-h-0 flex-1 overflow-y-auto p-1">
           {recipes.map((r) => {
-            const cat = categoryLine(r.category);
+            const cat = categoryLine(r.category, loc, categoryDefs);
             return (
               <li key={r.id}>
                 <button
@@ -146,12 +156,16 @@ function PlannedMealCompact({
   meal,
   pending,
   onRemove,
+  categoryDefs,
 }: {
   meal: PlanWeekClientMeal;
   pending: boolean;
   onRemove: (id: string) => void;
+  categoryDefs: readonly RecipeCategoryDefPublic[];
 }) {
-  const cat = categoryLine(meal.recipe.category);
+  const { locale } = useUiLocale();
+  const loc = locale === "en" ? "en" : "de";
+  const cat = categoryLine(meal.recipe.category, loc, categoryDefs);
   return (
     <div className="rounded-lg border border-border bg-card-muted/80 p-1.5 dark:bg-card-muted/50 sm:p-2">
       <div className="flex gap-2">
@@ -202,6 +216,7 @@ export function PlanWeekClient(props: {
   weekStart: string;
   meals: PlanWeekClientMeal[];
   recipes: RecipePick[];
+  categoryDefs: readonly RecipeCategoryDefPublic[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -336,6 +351,7 @@ export function PlanWeekClient(props: {
                               key={meal.id}
                               meal={meal}
                               pending={pending}
+                              categoryDefs={props.categoryDefs}
                               onRemove={(id) => run(() => removePlannedMealAction(id))}
                             />
                           ))
@@ -357,6 +373,7 @@ export function PlanWeekClient(props: {
           dateIso={mealMenu.dateIso}
           recipes={props.recipes}
           pending={pending}
+          categoryDefs={props.categoryDefs}
           onPick={pickRecipe}
           onClose={() => setMealMenu(null)}
         />

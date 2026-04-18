@@ -3,6 +3,10 @@
 import { useState } from "react";
 import type { ParsedRecipeDraft } from "@/lib/recipe-import";
 import { RecipeForm, type RecipeFormInitial } from "@/components/RecipeForm";
+import type {
+  RecipeCategoryDefPublic,
+  RecipeDietKindDefPublic,
+} from "@/lib/recipe-taxonomy";
 
 function draftToFormInitial(d: ParsedRecipeDraft): RecipeFormInitial {
   return {
@@ -23,7 +27,13 @@ function draftToFormInitial(d: ParsedRecipeDraft): RecipeFormInitial {
 }
 
 /** URL-Import für die Seite „Neues Rezept“ (Tab „Aus URL importieren“). */
-export function RecipeImportPanel() {
+export function RecipeImportPanel({
+  categoryDefs,
+  dietKindDefs,
+}: {
+  categoryDefs: readonly RecipeCategoryDefPublic[];
+  dietKindDefs: readonly RecipeDietKindDefPublic[];
+}) {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -104,6 +114,8 @@ export function RecipeImportPanel() {
               key={draft.sourceUrl + draft.title}
               mode="create"
               initial={draftToFormInitial(draft)}
+              categoryDefs={categoryDefs}
+              dietKindDefs={dietKindDefs}
             />
           </div>
         </div>

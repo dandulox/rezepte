@@ -2,11 +2,8 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import * as cheerio from "cheerio";
 import { parseIngredientLine } from "@/lib/ingredient-parse";
-import {
-  resolveImportedRecipeCategory,
-  type RecipeCategoryId,
-} from "@/lib/recipe-category";
-import type { RecipeDietKindId } from "@/lib/recipe-diet";
+import { resolveImportedRecipeCategory } from "@/lib/recipe-category";
+import { getRecipeCategoryDefs } from "@/lib/recipe-taxonomy";
 
 const execFileAsync = promisify(execFile);
 
@@ -39,9 +36,9 @@ export type ParsedRecipeDraft = {
   sourceUrl: string;
   servingsBase: number;
   /** Automatisch aus JSON-LD recipeCategory und Textheuristik */
-  category: RecipeCategoryId | null;
+  category: string | null;
   /** Beim Import nicht gesetzt — manuell im Formular wählbar */
-  dietKind: RecipeDietKindId | null;
+  dietKind: string | null;
   ingredients: string[];
   /** Aus JSON-LD nutrition und aus recipeIngredient herausgefiltert */
   nutritionLines: string[];
@@ -323,6 +320,7 @@ function mergeUniqueLines(buckets: string[][]): string[] {
 export function recipeFromJsonLd(
   recipe: Record<string, unknown>,
   sourceUrl: string,
+  validCategoryIds: Set<string>,
 ): ParsedRecipeDraft {
   const title = typeof recipe.name === "string" ? recipe.name : "Unbenanntes Rezept";
   const description =
@@ -340,13 +338,16 @@ export function recipeFromJsonLd(
 
   const instructions = normalizeInstructions(recipe.recipeInstructions);
 
-  const category = resolveImportedRecipeCategory({
-    jsonLdRecipeCategory: recipe.recipeCategory,
-    title,
-    description,
-    ingredients,
-    instructions,
-  });
+  const category = resolveImportedRecipeCategory(
+    {
+      jsonLdRecipeCategory: recipe.recipeCategory,
+      title,
+      description,
+      ingredients,
+      instructions,
+    },
+    validCategoryIds,
+  );
 
   return {
     title,
@@ -365,12 +366,16 @@ export function recipeFromJsonLd(
   };
 }
 
-export function parseRecipeFromHtml(html: string, sourceUrl: string): ParsedRecipeDraft {
+export function parseRecipeFromHtml(
+  html: string,
+  sourceUrl: string,
+  validCategoryIds: Set<string>,
+): ParsedRecipeDraft {
   const blocks = parseJsonLdScripts(html);
   for (const block of blocks) {
     const recipe = findRecipeObject(block);
     if (recipe) {
-      return recipeFromJsonLd(recipe, sourceUrl);
+      return recipeFromJsonLd(recipe, sourceUrl, validCategoryIds);
     }
   }
   throw new ImportError("Kein Rezept (JSON-LD) auf der Seite gefunden.", "NO_RECIPE");
@@ -486,7 +491,9 @@ export async function fetchRecipeHtml(url: string): Promise<string> {
 
 export async function importRecipeFromUrl(url: string): Promise<ParsedRecipeDraft> {
   const html = await fetchRecipeHtml(url);
-  return parseRecipeFromHtml(html, url);
+  const defs = await getRecipeCategoryDefs();
+  const validCategoryIds = new Set(defs.map((d) => d.id));
+  return parseRecipeFromHtml(html, url, validCategoryIds);
 }
 
 /** Für Persistenz: Zutaten mit optionalem Parsing in quantity/unit/name */

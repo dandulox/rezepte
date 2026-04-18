@@ -1,11 +1,12 @@
 import { FavoritenPageClient } from "@/components/FavoritenPageClient";
 import { prisma } from "@/lib/prisma";
+import { getRecipeCategoryDefs, getRecipeDietKindDefs } from "@/lib/recipe-taxonomy";
 import { recipeVoteCountsFromGroupBy } from "@/lib/recipe-votes";
 
 export const dynamic = "force-dynamic";
 
 export default async function FavoritenPage() {
-  const [recipes, voteGroupRows] = await Promise.all([
+  const [recipes, voteGroupRows, categoryDefs, dietKindDefs] = await Promise.all([
     prisma.recipe.findMany({
       orderBy: { updatedAt: "desc" },
       select: {
@@ -23,6 +24,8 @@ export default async function FavoritenPage() {
       by: ["recipeId", "type"],
       _count: { _all: true },
     }),
+    getRecipeCategoryDefs(),
+    getRecipeDietKindDefs(),
   ]);
 
   const voteCountsMap = recipeVoteCountsFromGroupBy(voteGroupRows);
@@ -33,5 +36,12 @@ export default async function FavoritenPage() {
     updatedAt: r.updatedAt.toISOString(),
   }));
 
-  return <FavoritenPageClient recipes={recipePayload} voteCounts={voteCounts} />;
+  return (
+    <FavoritenPageClient
+      recipes={recipePayload}
+      voteCounts={voteCounts}
+      categoryDefs={categoryDefs}
+      dietKindDefs={dietKindDefs}
+    />
+  );
 }

@@ -1,3 +1,4 @@
+import { getRecipeCategoryDefs, getRecipeDietKindDefs } from "@/lib/recipe-taxonomy";
 import { NewRecipeClient } from "./NewRecipeClient";
 
 export const metadata = {
@@ -11,5 +12,15 @@ export default async function NewRecipePage({
 }) {
   const { mode } = await searchParams;
   const initialTab = mode === "import" ? "import" : "manual";
-  return <NewRecipeClient initialTab={initialTab} />;
+  const [categoryDefs, dietKindDefs] = await Promise.all([
+    getRecipeCategoryDefs(),
+    getRecipeDietKindDefs(),
+  ]);
+  return (
+    <NewRecipeClient
+      initialTab={initialTab}
+      categoryDefs={categoryDefs}
+      dietKindDefs={dietKindDefs}
+    />
+  );
 }

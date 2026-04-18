@@ -1,12 +1,14 @@
 import { HomePageClient } from "@/components/HomePageClient";
 import { prisma } from "@/lib/prisma";
 import type { RecipeCookStats } from "@/lib/recipe-discovery-ranking";
+import { getRecipeCategoryDefs, getRecipeDietKindDefs } from "@/lib/recipe-taxonomy";
 import { recipeVoteCountsFromGroupBy } from "@/lib/recipe-votes";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [recipes, voteGroupRows, cookLogGroups] = await Promise.all([
+  const [recipes, voteGroupRows, cookLogGroups, categoryDefs, dietKindDefs] =
+    await Promise.all([
     prisma.recipe.findMany({
       orderBy: { updatedAt: "desc" },
       select: {
@@ -29,6 +31,8 @@ export default async function HomePage() {
       _max: { cookedAt: true },
       _count: { _all: true },
     }),
+    getRecipeCategoryDefs(),
+    getRecipeDietKindDefs(),
   ]);
 
   const voteCountsMap = recipeVoteCountsFromGroupBy(voteGroupRows);
@@ -55,6 +59,8 @@ export default async function HomePage() {
       recipes={recipePayload}
       voteCounts={voteCounts}
       cookStatsByRecipeId={cookStatsByRecipeId}
+      categoryDefs={categoryDefs}
+      dietKindDefs={dietKindDefs}
     />
   );
 }

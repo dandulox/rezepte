@@ -1,6 +1,7 @@
 import { AdminPanel } from "@/app/admin/AdminPanel";
 import { adminThemeFromRow, ensureAdminSettings } from "@/lib/admin-settings";
 import { normalizeRecipeDisplayLocale } from "@/lib/recipe-display-locale";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +10,15 @@ export const metadata = {
 };
 
 export default async function AdminPage() {
-  const row = await ensureAdminSettings();
+  const [row, categoryDefs, dietKindDefs] = await Promise.all([
+    ensureAdminSettings(),
+    prisma.recipeCategoryDef.findMany({
+      orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+    }),
+    prisma.recipeDietKindDef.findMany({
+      orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+    }),
+  ]);
   const initialAppearance = adminThemeFromRow(row);
   const initialRecipeDisplayLocale = normalizeRecipeDisplayLocale(
     row.recipeDisplayLocale,
@@ -18,6 +27,8 @@ export default async function AdminPage() {
     <AdminPanel
       initialAppearance={initialAppearance}
       initialRecipeDisplayLocale={initialRecipeDisplayLocale}
+      initialCategoryDefs={categoryDefs}
+      initialDietKindDefs={dietKindDefs}
     />
   );
 }

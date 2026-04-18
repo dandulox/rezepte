@@ -4,6 +4,10 @@ import { useState } from "react";
 import { RecipeForm, type RecipeFormInitial } from "@/components/RecipeForm";
 import { useUiLocale } from "@/components/UiLocaleProvider";
 import type { ParsedRecipeDraft } from "@/lib/recipe-import";
+import type {
+  RecipeCategoryDefPublic,
+  RecipeDietKindDefPublic,
+} from "@/lib/recipe-taxonomy";
 
 function draftToFormInitial(d: ParsedRecipeDraft): RecipeFormInitial {
   return {
@@ -23,7 +27,13 @@ function draftToFormInitial(d: ParsedRecipeDraft): RecipeFormInitial {
   };
 }
 
-export function ImportClient() {
+export function ImportClient({
+  categoryDefs,
+  dietKindDefs,
+}: {
+  categoryDefs: readonly RecipeCategoryDefPublic[];
+  dietKindDefs: readonly RecipeDietKindDefPublic[];
+}) {
   const { strings: s } = useUiLocale();
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -107,6 +117,8 @@ export function ImportClient() {
               key={draft.sourceUrl + draft.title}
               mode="create"
               initial={draftToFormInitial(draft)}
+              categoryDefs={categoryDefs}
+              dietKindDefs={dietKindDefs}
             />
           </div>
         </div>

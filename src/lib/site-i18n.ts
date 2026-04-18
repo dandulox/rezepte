@@ -92,6 +92,9 @@ export type SiteStrings = {
     searchLabel: string;
     searchPlaceholder: string;
     uncategorized: string;
+    navAria: string;
+    chooseCategory: string;
+    recipeCount: (n: number) => string;
     empty: (opts: {
       hasQuery: boolean;
       hasDiet: boolean;
@@ -113,6 +116,7 @@ export type SiteStrings = {
       tabSecurity: string;
       tabVotes: string;
       tabAppearance: string;
+      tabTaxonomy: string;
       logout: string;
     };
     security: {
@@ -177,6 +181,29 @@ export type SiteStrings = {
       backfillButton: string;
       backfillDone: (created: number, skipped: number, failed: number) => string;
     };
+    taxonomy: {
+      title: string;
+      hint: string;
+      categoriesTitle: string;
+      dietTitle: string;
+      slug: string;
+      slugHint: string;
+      labelDe: string;
+      labelEn: string;
+      sortOrder: string;
+      isMeat: string;
+      searchExtra: string;
+      searchExtraHint: string;
+      addCategory: string;
+      addDiet: string;
+      saveRow: string;
+      delete: string;
+      deleteCategoryConfirm: string;
+      deleteDietConfirm: string;
+      savedCategory: string;
+      savedDiet: string;
+      deletedOk: string;
+    };
     serverErrors: {
       sessionExpired: string;
       pinMustBe4: string;
@@ -187,6 +214,11 @@ export type SiteStrings = {
       invalidThemeColor: (key: string) => string;
       invalidDisplayLocale: string;
       backfillNeedsNonDe: string;
+      invalidTaxonomySlug: string;
+      duplicateTaxonomyId: string;
+      categoryInUse: (n: number) => string;
+      dietInUse: (n: number) => string;
+      taxonomyMissingLabels: string;
     };
   };
 };
@@ -295,6 +327,9 @@ const DE: SiteStrings = {
     searchLabel: "Rezepte durchsuchen",
     searchPlaceholder: "Suche nach Titel, Kategorie, Ernährung, Zutaten…",
     uncategorized: "Ohne Kategorie",
+    navAria: "Kategorienavigation",
+    chooseCategory: "Kategorie wählen",
+    recipeCount: (n) => (n === 1 ? "1 Rezept" : `${n} Rezepte`),
     empty: ({ hasQuery, hasDiet, query }) => {
       if (hasQuery && hasDiet) {
         return `Keine Treffer für „${query}“ mit dem gewählten Ernährungsfilter.`;
@@ -324,6 +359,7 @@ const DE: SiteStrings = {
       tabSecurity: "Sicherheit",
       tabVotes: "Bewertungen",
       tabAppearance: "Darstellung",
+      tabTaxonomy: "Kategorien & Ernährung",
       logout: "Abmelden",
     },
     security: {
@@ -398,6 +434,30 @@ const DE: SiteStrings = {
       backfillDone: (created, skipped, failed) =>
         `Fertig: ${created} neu, ${skipped} schon vorhanden${failed ? `, ${failed} fehlgeschlagen` : ""}.`,
     },
+    taxonomy: {
+      title: "Kategorien & Ernährung",
+      hint:
+        "Interne Kurz-IDs (Slug) für Rezepte; Anzeigenamen für Deutsch und Englisch. Änderungen gelten sofort für Formulare und Listen.",
+      categoriesTitle: "Gerichtskategorien",
+      dietTitle: "Ernährungsarten",
+      slug: "Kurz-ID (Slug)",
+      slugHint: "Nur a–z, Ziffern und Unterstrich; beginnt mit Buchstabe.",
+      labelDe: "Name (Deutsch)",
+      labelEn: "Name (Englisch)",
+      sortOrder: "Sortierung",
+      isMeat: "Enthält Fleisch (für Filter „Fleisch“)",
+      searchExtra: "Zusatzbegriffe für Suche",
+      searchExtraHint: "Optional: Synonyme, durch Leerzeichen getrennt.",
+      addCategory: "Kategorie hinzufügen",
+      addDiet: "Ernährungsart hinzufügen",
+      saveRow: "Speichern",
+      delete: "Löschen",
+      deleteCategoryConfirm: "Diese Kategorie wirklich löschen?",
+      deleteDietConfirm: "Diese Ernährungsart wirklich löschen?",
+      savedCategory: "Kategorie gespeichert.",
+      savedDiet: "Ernährungsart gespeichert.",
+      deletedOk: "Gelöscht.",
+    },
     serverErrors: {
       sessionExpired: "Sitzung abgelaufen. Bitte erneut anmelden.",
       pinMustBe4: "PIN muss genau 4 Ziffern sein.",
@@ -410,6 +470,14 @@ const DE: SiteStrings = {
       invalidDisplayLocale: "Ungültige Anzeigesprache.",
       backfillNeedsNonDe:
         "Für „Deutsch (Original)“ werden keine Übersetzungen gespeichert. Bitte zuerst eine andere Anzeigesprache wählen und speichern.",
+      invalidTaxonomySlug:
+        "Ungültige Kurz-ID: nur Kleinbuchstaben, Ziffern und Unterstrich, maximal 64 Zeichen, beginnt mit Buchstabe.",
+      duplicateTaxonomyId: "Diese Kurz-ID existiert bereits.",
+      categoryInUse: (n) =>
+        `Kategorie wird noch von ${n} Rezept(en) verwendet — zuerst zuweisen oder Rezepte ändern.`,
+      dietInUse: (n) =>
+        `Ernährungsart wird noch von ${n} Rezept(en) verwendet — zuerst zuweisen oder Rezepte ändern.`,
+      taxonomyMissingLabels: "Deutsche und englische Bezeichnung dürfen nicht leer sein.",
     },
   },
 };
@@ -517,6 +585,9 @@ const EN: SiteStrings = {
     searchLabel: "Search recipes",
     searchPlaceholder: "Search title, category, diet, ingredients…",
     uncategorized: "Uncategorized",
+    navAria: "Category navigation",
+    chooseCategory: "Choose category",
+    recipeCount: (n) => (n === 1 ? "1 recipe" : `${n} recipes`),
     empty: ({ hasQuery, hasDiet, query }) => {
       if (hasQuery && hasDiet) {
         return `No results for “${query}” with the selected diet filter.`;
@@ -546,6 +617,7 @@ const EN: SiteStrings = {
       tabSecurity: "Security",
       tabVotes: "Ratings",
       tabAppearance: "Appearance",
+      tabTaxonomy: "Categories & diet",
       logout: "Sign out",
     },
     security: {
@@ -619,6 +691,30 @@ const EN: SiteStrings = {
       backfillDone: (created, skipped, failed) =>
         `Done: ${created} new, ${skipped} already present${failed ? `, ${failed} failed` : ""}.`,
     },
+    taxonomy: {
+      title: "Categories & diet",
+      hint:
+        "Short internal IDs (slugs) for recipes; display names in German and English. Changes apply immediately in forms and lists.",
+      categoriesTitle: "Dish categories",
+      dietTitle: "Diet types",
+      slug: "Short ID (slug)",
+      slugHint: "Lowercase letters, digits and underscore only; must start with a letter.",
+      labelDe: "Name (German)",
+      labelEn: "Name (English)",
+      sortOrder: "Sort order",
+      isMeat: "Contains meat (for “Meat dishes” filter)",
+      searchExtra: "Extra search terms",
+      searchExtraHint: "Optional: synonyms, space-separated.",
+      addCategory: "Add category",
+      addDiet: "Add diet type",
+      saveRow: "Save",
+      delete: "Delete",
+      deleteCategoryConfirm: "Really delete this category?",
+      deleteDietConfirm: "Really delete this diet type?",
+      savedCategory: "Category saved.",
+      savedDiet: "Diet type saved.",
+      deletedOk: "Deleted.",
+    },
     serverErrors: {
       sessionExpired: "Session expired. Please sign in again.",
       pinMustBe4: "PIN must be exactly 4 digits.",
@@ -631,6 +727,14 @@ const EN: SiteStrings = {
       invalidDisplayLocale: "Invalid display language.",
       backfillNeedsNonDe:
         "No translations are stored for “German (original)”. Please choose another display language and save first.",
+      invalidTaxonomySlug:
+        "Invalid short ID: lowercase letters, digits and underscore only, max 64 characters, must start with a letter.",
+      duplicateTaxonomyId: "This short ID already exists.",
+      categoryInUse: (n) =>
+        `Category is still used by ${n} recipe(s) — reassign or edit recipes first.`,
+      dietInUse: (n) =>
+        `Diet type is still used by ${n} recipe(s) — reassign or edit recipes first.`,
+      taxonomyMissingLabels: "German and English names must not be empty.",
     },
   },
 };

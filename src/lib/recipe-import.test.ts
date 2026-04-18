@@ -5,6 +5,9 @@ import {
   parseRecipeFromHtml,
   partitionIngredientsAndNutrition,
 } from "@/lib/recipe-import";
+import { RECIPE_CATEGORY_SEED_IDS } from "@/lib/recipe-category";
+
+const testCategoryIds = new Set<string>(RECIPE_CATEGORY_SEED_IDS);
 
 const fixtureHtml = `<!doctype html>
 <html><head>
@@ -31,7 +34,11 @@ const fixtureHtml = `<!doctype html>
 
 describe("parseRecipeFromHtml", () => {
   it("liest JSON-LD Recipe aus HTML", () => {
-    const r = parseRecipeFromHtml(fixtureHtml, "https://quelle.example/rezept");
+    const r = parseRecipeFromHtml(
+      fixtureHtml,
+      "https://quelle.example/rezept",
+      testCategoryIds,
+    );
     expect(r.title).toBe("Testkuchen");
     expect(r.servingsBase).toBe(6);
     expect(r.prepTime).toBe("PT15M");
@@ -46,14 +53,20 @@ describe("parseRecipeFromHtml", () => {
   });
 
   it("wirft ImportError ohne Rezept", () => {
-    expect(() => parseRecipeFromHtml("<html></html>", "https://x.test")).toThrow(ImportError);
+    expect(() =>
+      parseRecipeFromHtml("<html></html>", "https://x.test", testCategoryIds),
+    ).toThrow(ImportError);
   });
 
   it("findet Recipe in JSON-LD WebPage.mainEntity (REWE)", () => {
     const reweSnippet = `<script type="application/ld+json" id="recipe-schema">
 {"@context":"http://schema.org","@type":"Webpage","name":"Demo","mainEntity":{"@type":"Recipe","name":"Demo-Rezept","recipeYield":"2","totalTime":"PT30M","recipeIngredient":["1.0 EL Öl","Salz"],"recipeInstructions":[{"@type":"HowToStep","text":"Mischen."}]}}
 </script>`;
-    const r = parseRecipeFromHtml(reweSnippet, "https://www.rewe.de/rezepte/demo/");
+    const r = parseRecipeFromHtml(
+      reweSnippet,
+      "https://www.rewe.de/rezepte/demo/",
+      testCategoryIds,
+    );
     expect(r.title).toBe("Demo-Rezept");
     expect(r.servingsBase).toBe(2);
     expect(r.totalTime).toBe("PT30M");
@@ -78,7 +91,7 @@ describe("parseRecipeFromHtml", () => {
   "recipeInstructions": [{ "@type": "HowToStep", "text": "Mischen." }]
 }
 </script>`;
-    const r = parseRecipeFromHtml(html, "https://example.com/r");
+    const r = parseRecipeFromHtml(html, "https://example.com/r", testCategoryIds);
     expect(r.ingredients).toEqual(["200 g Mehl"]);
     expect(r.nutritionLines).toEqual(["Energie: 2000 kJ / 480 kcal", "Fett: 12 g"]);
   });
@@ -98,7 +111,7 @@ describe("parseRecipeFromHtml", () => {
   "recipeInstructions": []
 }
 </script>`;
-    const r = parseRecipeFromHtml(html, "https://example.com/k");
+    const r = parseRecipeFromHtml(html, "https://example.com/k", testCategoryIds);
     expect(r.ingredients).toEqual(["100 g Zucker"]);
     expect(r.nutritionLines).toContain("Kalorien: 300 kcal");
     expect(r.nutritionLines).toContain("Fett: 10 g");

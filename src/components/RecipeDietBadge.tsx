@@ -1,9 +1,10 @@
 import type { ComponentType } from "react";
-import type { RecipeDietKindId } from "@/lib/recipe-diet";
+import { useUiLocale } from "@/components/UiLocaleProvider";
 import {
-  isRecipeDietKindId,
-  recipeDietKindLabel,
+  isRecipeDietKindInDefs,
+  recipeDietKindDisplayLabel,
 } from "@/lib/recipe-diet";
+import type { RecipeDietKindDefPublic } from "@/lib/recipe-taxonomy";
 
 function IconVegan({ className }: { className?: string }) {
   return (
@@ -132,10 +133,26 @@ function IconFleischAndere({ className }: { className?: string }) {
   );
 }
 
-const DIET_ICONS: Record<
-  RecipeDietKindId,
-  ComponentType<{ className?: string }>
-> = {
+function IconGeneric({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <circle cx="12" cy="12" r="3.5" />
+    </svg>
+  );
+}
+
+const DIET_ICONS: Partial<Record<string, ComponentType<{ className?: string }>>> = {
   vegan: IconVegan,
   vegetarisch: IconVegetarisch,
   fleisch_huhn: IconHuhn,
@@ -149,18 +166,23 @@ const DIET_ICONS: Record<
  */
 export function RecipeDietImageBadge({
   dietKind,
+  dietKindDefs,
   className = "",
 }: {
   dietKind: string | null | undefined;
+  dietKindDefs: readonly RecipeDietKindDefPublic[];
   className?: string;
 }) {
-  if (!dietKind || !isRecipeDietKindId(dietKind)) return null;
-  const label = recipeDietKindLabel(dietKind);
-  const Icon = DIET_ICONS[dietKind];
+  const { locale } = useUiLocale();
+  const uiLocale = locale === "en" ? "en" : "de";
+  if (!dietKind || !isRecipeDietKindInDefs(dietKind, dietKindDefs)) return null;
+  const label = recipeDietKindDisplayLabel(dietKind, uiLocale, dietKindDefs);
+  const Icon = DIET_ICONS[dietKind] ?? IconGeneric;
+  const dietWord = locale === "en" ? "Diet" : "Ernährung";
   return (
     <div
       role="img"
-      aria-label={label ? `Ernährung: ${label}` : undefined}
+      aria-label={label ? `${dietWord}: ${label}` : undefined}
       className={`pointer-events-none absolute left-2 top-2 flex items-center gap-1.5 rounded-lg bg-black/60 px-2 py-1 text-white shadow-md backdrop-blur-[2px] ${className}`}
       title={label ?? undefined}
     >

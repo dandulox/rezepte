@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { isRecipeCategoryId } from "@/lib/recipe-category";
-import { isRecipeDietKindId } from "@/lib/recipe-diet";
+import { isRecipeCategoryInDefs } from "@/lib/recipe-category";
+import { isRecipeDietKindInDefs } from "@/lib/recipe-diet";
+import { getRecipeCategoryDefs, getRecipeDietKindDefs } from "@/lib/recipe-taxonomy";
 import { RecipeForm } from "@/components/RecipeForm";
 import { DeleteRecipeButton } from "@/components/DeleteRecipeButton";
 
@@ -20,6 +21,11 @@ export default async function EditRecipePage({
 
   if (!recipe) notFound();
 
+  const [categoryDefs, dietKindDefs] = await Promise.all([
+    getRecipeCategoryDefs(),
+    getRecipeDietKindDefs(),
+  ]);
+
   const instructions = Array.isArray(recipe.instructions)
     ? (recipe.instructions as unknown[]).map((x) => String(x))
     : typeof recipe.instructions === "string"
@@ -36,6 +42,8 @@ export default async function EditRecipePage({
       <RecipeForm
         mode="edit"
         recipeId={recipe.id}
+        categoryDefs={categoryDefs}
+        dietKindDefs={dietKindDefs}
         initial={{
           title: recipe.title,
           description: recipe.description ?? "",
@@ -45,8 +53,14 @@ export default async function EditRecipePage({
           totalTime: recipe.totalTime ?? "",
           sourceUrl: recipe.sourceUrl ?? "",
           servingsBase: recipe.servingsBase,
-          category: recipe.category && isRecipeCategoryId(recipe.category) ? recipe.category : null,
-          dietKind: recipe.dietKind && isRecipeDietKindId(recipe.dietKind) ? recipe.dietKind : null,
+          category:
+            recipe.category && isRecipeCategoryInDefs(recipe.category, categoryDefs)
+              ? recipe.category
+              : null,
+          dietKind:
+            recipe.dietKind && isRecipeDietKindInDefs(recipe.dietKind, dietKindDefs)
+              ? recipe.dietKind
+              : null,
           ingredients: recipe.ingredients.map((i) => i.rawText),
           nutritionText: recipe.nutritionText ?? "",
           instructions,

@@ -1,6 +1,8 @@
 import { RecipeVoteType } from "@/generated/prisma/client";
-import { RECIPE_CATEGORY_LABEL, isRecipeCategoryId } from "@/lib/recipe-category";
+import { displayRecipeCategoryLabel } from "@/lib/recipe-category";
 import { prisma } from "@/lib/prisma";
+import type { RecipeCategoryDefPublic } from "@/lib/recipe-taxonomy";
+import { getRecipeCategoryDefs } from "@/lib/recipe-taxonomy";
 
 const WEEKDAY_LABELS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"] as const;
 
@@ -27,11 +29,13 @@ function formatMonthLabel(key: string): string {
   return new Intl.DateTimeFormat("de-DE", { month: "short", year: "numeric" }).format(d);
 }
 
-function categoryKeyAndLabel(category: string | null): { key: string; label: string } {
+function categoryKeyAndLabel(
+  category: string | null,
+  categoryDefs: readonly RecipeCategoryDefPublic[],
+): { key: string; label: string } {
   if (!category) return { key: "uncategorized", label: "Ohne Kategorie" };
-  if (isRecipeCategoryId(category)) {
-    return { key: category, label: RECIPE_CATEGORY_LABEL[category] };
-  }
+  const label = displayRecipeCategoryLabel(category, "de", categoryDefs);
+  if (label) return { key: category, label };
   return { key: `legacy:${category}`, label: category };
 }
 
@@ -74,6 +78,8 @@ export async function getCookStatsSnapshot(): Promise<CookStatsSnapshot> {
   const now = new Date();
   const thisMonthKey = monthKey(now);
   const lastMonthKey = monthKey(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+
+  const categoryDefs = await getRecipeCategoryDefs();
 
   const [allLogs, likeGroups] = await Promise.all([
     prisma.recipeCookLog.findMany({
@@ -158,7 +164,7 @@ export async function getCookStatsSnapshot(): Promise<CookStatsSnapshot> {
   const categoryAgg = new Map<string, { label: string; count: number }>();
   for (const log of allLogs) {
     const rawCat = categoryByRecipeId.get(log.recipeId) ?? null;
-    const { key, label } = categoryKeyAndLabel(rawCat);
+    const { key, label } = categoryKeyAndLabel(rawCat, categoryDefs);
     const cur = categoryAgg.get(key);
     if (cur) cur.count += 1;
     else categoryAgg.set(key, { label, count: 1 });

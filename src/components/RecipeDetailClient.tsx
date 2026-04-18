@@ -16,8 +16,12 @@ import { RecipeCookLogPanel } from "@/components/RecipeCookLogPanel";
 import { RecipeDietImageBadge } from "@/components/RecipeDietBadge";
 import { RecipeFavoriteButton } from "@/components/RecipeFavoriteButton";
 import { RecipeTimes } from "@/components/RecipeTimes";
-import { recipeCategoryLabel } from "@/lib/recipe-category";
-import { recipeDietKindLabel } from "@/lib/recipe-diet";
+import { displayRecipeCategoryLabel } from "@/lib/recipe-category";
+import { recipeDietKindDisplayLabel } from "@/lib/recipe-diet";
+import type {
+  RecipeCategoryDefPublic,
+  RecipeDietKindDefPublic,
+} from "@/lib/recipe-taxonomy";
 
 export type RecipeTranslationPayload = {
   locale: string;
@@ -180,6 +184,8 @@ export function RecipeDetailClient(props: {
   dislikeCount: number;
   cookCount: number;
   cookRecent: { id: string; cookedAt: string }[];
+  categoryDefs: readonly RecipeCategoryDefPublic[];
+  dietKindDefs: readonly RecipeDietKindDefPublic[];
 }) {
   const viewLang = props.recipeViewLang;
 
@@ -260,11 +266,17 @@ export function RecipeDetailClient(props: {
     labels: panelLabels,
   };
 
-  const categoryText = recipeCategoryLabel(
+  const labelLocale = viewLang === "de" ? "de" : "en";
+  const categoryText = displayRecipeCategoryLabel(
     props.category,
-    viewLang === "de" ? "de" : "en",
+    labelLocale,
+    props.categoryDefs,
   );
-  const dietText = recipeDietKindLabel(props.dietKind);
+  const dietText = recipeDietKindDisplayLabel(
+    props.dietKind,
+    labelLocale,
+    props.dietKindDefs,
+  );
 
   const articleLang = viewLang === "de" ? "de" : viewLang;
 
@@ -312,7 +324,7 @@ export function RecipeDetailClient(props: {
                   alt=""
                   className="max-h-[min(420px,58dvh)] w-full object-cover sm:max-h-[420px]"
                 />
-                <RecipeDietImageBadge dietKind={props.dietKind} />
+                <RecipeDietImageBadge dietKind={props.dietKind} dietKindDefs={props.dietKindDefs} />
               </div>
               <RecipeReactions
                 recipeId={props.recipeId}

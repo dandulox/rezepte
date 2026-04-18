@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getRecipeCategoryDefs } from "@/lib/recipe-taxonomy";
 import {
   addDays,
   toISODateLocal,
@@ -24,7 +25,7 @@ export default async function PlanPage({
   /** Ausgewählte Woche plus die folgenden zwei Wochen (21 Tage). */
   const endStr = toISODateLocal(addDays(weekStart, 20));
 
-  const [meals, recipes] = await Promise.all([
+  const [meals, recipes, categoryDefs] = await Promise.all([
     prisma.plannedMeal.findMany({
       where: { date: { gte: startStr, lte: endStr } },
       include: {
@@ -43,6 +44,7 @@ export default async function PlanPage({
       orderBy: { title: "asc" },
       select: { id: true, title: true, imageUrl: true, category: true },
     }),
+    getRecipeCategoryDefs(),
   ]);
 
   return (
@@ -50,6 +52,7 @@ export default async function PlanPage({
       weekStart={startStr}
       meals={JSON.parse(JSON.stringify(meals)) as PlanWeekClientMeal[]}
       recipes={recipes}
+      categoryDefs={categoryDefs}
     />
   );
 }

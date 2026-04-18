@@ -3,10 +3,22 @@
 import { useRouter } from "next/navigation";
 import { RecipeForm } from "@/components/RecipeForm";
 import { RecipeImportPanel } from "@/components/RecipeImportPanel";
+import type {
+  RecipeCategoryDefPublic,
+  RecipeDietKindDefPublic,
+} from "@/lib/recipe-taxonomy";
 
 type Tab = "manual" | "import";
 
-export function NewRecipeClient({ initialTab }: { initialTab: Tab }) {
+export function NewRecipeClient({
+  initialTab,
+  categoryDefs,
+  dietKindDefs,
+}: {
+  initialTab: Tab;
+  categoryDefs: readonly RecipeCategoryDefPublic[];
+  dietKindDefs: readonly RecipeDietKindDefPublic[];
+}) {
   const router = useRouter();
   const tab = initialTab;
 
@@ -52,7 +64,11 @@ export function NewRecipeClient({ initialTab }: { initialTab: Tab }) {
           </div>
         </div>
       </div>
-      {tab === "manual" ? <RecipeForm mode="create" /> : <RecipeImportPanel />}
+      {tab === "manual" ? (
+        <RecipeForm mode="create" categoryDefs={categoryDefs} dietKindDefs={dietKindDefs} />
+      ) : (
+        <RecipeImportPanel categoryDefs={categoryDefs} dietKindDefs={dietKindDefs} />
+      )}
     </div>
   );
 }

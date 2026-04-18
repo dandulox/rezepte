@@ -37,7 +37,20 @@ export type AdminBackfillTranslationsState = {
   failed?: number;
 };
 
+export type AdminTaxonomyActionState = { error?: string; ok?: boolean };
+
 const HEX6 = /^#[0-9A-Fa-f]{6}$/;
+const TAXONOMY_SLUG_RE = /^[a-z][a-z0-9_]{0,63}$/;
+
+function revalidateTaxonomyPaths() {
+  revalidatePath("/", "layout");
+  revalidatePath("/recipes/kategorien");
+  revalidatePath("/recipes/new");
+  revalidatePath("/statistik");
+  revalidatePath("/plan");
+  revalidatePath("/favoriten");
+  revalidatePath("/admin");
+}
 
 function parseHex6(raw: string): string | null {
   const s = raw.trim();
@@ -260,4 +273,184 @@ export async function adminBackfillRecipeTranslationsAction(
 
   revalidatePath("/", "layout");
   return { ok: true, created, skipped, failed };
+}
+
+export async function adminCreateRecipeCategoryAction(
+  _prev: AdminTaxonomyActionState,
+  formData: FormData,
+): Promise<AdminTaxonomyActionState> {
+  const err = adminServerErrors(adminUiLocaleFromFormData(formData));
+  if (!(await isAdminSessionValid())) {
+    return { error: err.sessionExpired };
+  }
+  const id = String(formData.get("newCategoryId") ?? "").trim();
+  const labelDe = String(formData.get("newCategoryLabelDe") ?? "").trim();
+  const labelEn = String(formData.get("newCategoryLabelEn") ?? "").trim();
+  const sortOrderRaw = String(formData.get("newCategorySortOrder") ?? "").trim();
+  const sortOrder = sortOrderRaw ? parseInt(sortOrderRaw, 10) : 0;
+  if (!TAXONOMY_SLUG_RE.test(id)) {
+    return { error: err.invalidTaxonomySlug };
+  }
+  if (!labelDe || !labelEn) {
+    return { error: err.taxonomyMissingLabels };
+  }
+  const existing = await prisma.recipeCategoryDef.findUnique({ where: { id } });
+  if (existing) {
+    return { error: err.duplicateTaxonomyId };
+  }
+  await prisma.recipeCategoryDef.create({
+    data: {
+      id,
+      labelDe,
+      labelEn,
+      sortOrder: Number.isFinite(sortOrder) ? sortOrder : 0,
+    },
+  });
+  revalidateTaxonomyPaths();
+  return { ok: true };
+}
+
+export async function adminUpdateRecipeCategoryAction(
+  _prev: AdminTaxonomyActionState,
+  formData: FormData,
+): Promise<AdminTaxonomyActionState> {
+  const err = adminServerErrors(adminUiLocaleFromFormData(formData));
+  if (!(await isAdminSessionValid())) {
+    return { error: err.sessionExpired };
+  }
+  const id = String(formData.get("categoryId") ?? "").trim();
+  const labelDe = String(formData.get("labelDe") ?? "").trim();
+  const labelEn = String(formData.get("labelEn") ?? "").trim();
+  const sortOrder = parseInt(String(formData.get("sortOrder") ?? "0"), 10);
+  if (!id || !TAXONOMY_SLUG_RE.test(id)) {
+    return { error: err.invalidTaxonomySlug };
+  }
+  if (!labelDe || !labelEn) {
+    return { error: err.taxonomyMissingLabels };
+  }
+  await prisma.recipeCategoryDef.update({
+    where: { id },
+    data: {
+      labelDe,
+      labelEn,
+      sortOrder: Number.isFinite(sortOrder) ? sortOrder : 0,
+    },
+  });
+  revalidateTaxonomyPaths();
+  return { ok: true };
+}
+
+export async function adminDeleteRecipeCategoryAction(
+  _prev: AdminTaxonomyActionState,
+  formData: FormData,
+): Promise<AdminTaxonomyActionState> {
+  const err = adminServerErrors(adminUiLocaleFromFormData(formData));
+  if (!(await isAdminSessionValid())) {
+    return { error: err.sessionExpired };
+  }
+  const id = String(formData.get("categoryId") ?? "").trim();
+  if (!id) {
+    return { error: err.invalidTaxonomySlug };
+  }
+  const n = await prisma.recipe.count({ where: { category: id } });
+  if (n > 0) {
+    return { error: err.categoryInUse(n) };
+  }
+  await prisma.recipeCategoryDef.delete({ where: { id } });
+  revalidateTaxonomyPaths();
+  return { ok: true };
+}
+
+export async function adminCreateRecipeDietKindAction(
+  _prev: AdminTaxonomyActionState,
+  formData: FormData,
+): Promise<AdminTaxonomyActionState> {
+  const err = adminServerErrors(adminUiLocaleFromFormData(formData));
+  if (!(await isAdminSessionValid())) {
+    return { error: err.sessionExpired };
+  }
+  const id = String(formData.get("newDietId") ?? "").trim();
+  const labelDe = String(formData.get("newDietLabelDe") ?? "").trim();
+  const labelEn = String(formData.get("newDietLabelEn") ?? "").trim();
+  const searchExtra = String(formData.get("newDietSearchExtra") ?? "").trim();
+  const sortOrderRaw = String(formData.get("newDietSortOrder") ?? "").trim();
+  const sortOrder = sortOrderRaw ? parseInt(sortOrderRaw, 10) : 0;
+  const isMeat = String(formData.get("newDietIsMeat") ?? "") === "on";
+  if (!TAXONOMY_SLUG_RE.test(id)) {
+    return { error: err.invalidTaxonomySlug };
+  }
+  if (!labelDe || !labelEn) {
+    return { error: err.taxonomyMissingLabels };
+  }
+  const existing = await prisma.recipeDietKindDef.findUnique({ where: { id } });
+  if (existing) {
+    return { error: err.duplicateTaxonomyId };
+  }
+  await prisma.recipeDietKindDef.create({
+    data: {
+      id,
+      labelDe,
+      labelEn,
+      searchExtra,
+      isMeat,
+      sortOrder: Number.isFinite(sortOrder) ? sortOrder : 0,
+    },
+  });
+  revalidateTaxonomyPaths();
+  return { ok: true };
+}
+
+export async function adminUpdateRecipeDietKindAction(
+  _prev: AdminTaxonomyActionState,
+  formData: FormData,
+): Promise<AdminTaxonomyActionState> {
+  const err = adminServerErrors(adminUiLocaleFromFormData(formData));
+  if (!(await isAdminSessionValid())) {
+    return { error: err.sessionExpired };
+  }
+  const id = String(formData.get("dietId") ?? "").trim();
+  const labelDe = String(formData.get("labelDe") ?? "").trim();
+  const labelEn = String(formData.get("labelEn") ?? "").trim();
+  const searchExtra = String(formData.get("searchExtra") ?? "").trim();
+  const sortOrder = parseInt(String(formData.get("sortOrder") ?? "0"), 10);
+  const isMeat = String(formData.get("isMeat") ?? "") === "on";
+  if (!id || !TAXONOMY_SLUG_RE.test(id)) {
+    return { error: err.invalidTaxonomySlug };
+  }
+  if (!labelDe || !labelEn) {
+    return { error: err.taxonomyMissingLabels };
+  }
+  await prisma.recipeDietKindDef.update({
+    where: { id },
+    data: {
+      labelDe,
+      labelEn,
+      searchExtra,
+      isMeat,
+      sortOrder: Number.isFinite(sortOrder) ? sortOrder : 0,
+    },
+  });
+  revalidateTaxonomyPaths();
+  return { ok: true };
+}
+
+export async function adminDeleteRecipeDietKindAction(
+  _prev: AdminTaxonomyActionState,
+  formData: FormData,
+): Promise<AdminTaxonomyActionState> {
+  const err = adminServerErrors(adminUiLocaleFromFormData(formData));
+  if (!(await isAdminSessionValid())) {
+    return { error: err.sessionExpired };
+  }
+  const id = String(formData.get("dietId") ?? "").trim();
+  if (!id) {
+    return { error: err.invalidTaxonomySlug };
+  }
+  const n = await prisma.recipe.count({ where: { dietKind: id } });
+  if (n > 0) {
+    return { error: err.dietInUse(n) };
+  }
+  await prisma.recipeDietKindDef.delete({ where: { id } });
+  revalidateTaxonomyPaths();
+  return { ok: true };
 }

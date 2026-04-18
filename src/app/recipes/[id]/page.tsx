@@ -3,6 +3,7 @@ import { RecipeDetailClient } from "@/components/RecipeDetailClient";
 import { RecipeVoteType } from "@/generated/prisma/client";
 import { getRecipeDisplayLocale } from "@/lib/admin-settings";
 import { prisma } from "@/lib/prisma";
+import { getRecipeCategoryDefs, getRecipeDietKindDefs } from "@/lib/recipe-taxonomy";
 
 export const dynamic = "force-dynamic";
 
@@ -72,7 +73,11 @@ export default async function RecipeDetailPage({
       ? [recipe.instructions]
       : [];
 
-  const recipeViewLang = await getRecipeDisplayLocale();
+  const [recipeViewLang, categoryDefs, dietKindDefs] = await Promise.all([
+    getRecipeDisplayLocale(),
+    getRecipeCategoryDefs(),
+    getRecipeDietKindDefs(),
+  ]);
 
   return (
     <RecipeDetailClient
@@ -99,6 +104,8 @@ export default async function RecipeDetailPage({
         id: r.id,
         cookedAt: r.cookedAt.toISOString(),
       }))}
+      categoryDefs={categoryDefs}
+      dietKindDefs={dietKindDefs}
     />
   );
 }

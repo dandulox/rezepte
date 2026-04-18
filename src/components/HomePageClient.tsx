@@ -7,8 +7,12 @@ import { RecipeFavoriteButton } from "@/components/RecipeFavoriteButton";
 import { RecipeDietImageBadge } from "@/components/RecipeDietBadge";
 import { useRecipeFavorites } from "@/components/RecipeFavoritesProvider";
 import { useUiLocale } from "@/components/UiLocaleProvider";
-import { recipeCategoryLabel } from "@/lib/recipe-category";
+import { displayRecipeCategoryLabel } from "@/lib/recipe-category";
 import { formatPastRelative } from "@/lib/site-i18n";
+import type {
+  RecipeCategoryDefPublic,
+  RecipeDietKindDefPublic,
+} from "@/lib/recipe-taxonomy";
 import type { RecipeCookStats } from "@/lib/recipe-discovery-ranking";
 import { recipeMatchesSearchQuery } from "@/lib/recipe-search";
 import type { RecipeVoteCounts } from "@/lib/recipe-votes";
@@ -35,9 +39,23 @@ function shuffleInPlace<T>(items: T[]): void {
   }
 }
 
-function HomeCompactRecipeCard({ r, meta }: { r: HomeRecipe; meta: ReactNode }) {
+function HomeCompactRecipeCard({
+  r,
+  meta,
+  categoryDefs,
+  dietKindDefs,
+}: {
+  r: HomeRecipe;
+  meta: ReactNode;
+  categoryDefs: readonly RecipeCategoryDefPublic[];
+  dietKindDefs: readonly RecipeDietKindDefPublic[];
+}) {
   const { locale, strings } = useUiLocale();
-  const catLabel = recipeCategoryLabel(r.category, locale);
+  const catLabel = displayRecipeCategoryLabel(
+    r.category,
+    locale === "en" ? "en" : "de",
+    categoryDefs,
+  );
   return (
     <li className="w-[min(72vw,14rem)] shrink-0 snap-start sm:w-56">
       <Link
@@ -57,7 +75,7 @@ function HomeCompactRecipeCard({ r, meta }: { r: HomeRecipe; meta: ReactNode }) 
               {strings.common.noImage}
             </div>
           )}
-          <RecipeDietImageBadge dietKind={r.dietKind} />
+          <RecipeDietImageBadge dietKind={r.dietKind} dietKindDefs={dietKindDefs} />
           <RecipeFavoriteButton recipeId={r.id} layout="overlay" />
         </div>
         <div className="flex flex-1 flex-col gap-1.5 p-3">
@@ -123,6 +141,8 @@ type Props = {
   recipes: HomeRecipe[];
   voteCounts: Record<string, RecipeVoteCounts>;
   cookStatsByRecipeId: Record<string, RecipeCookStats>;
+  categoryDefs: readonly RecipeCategoryDefPublic[];
+  dietKindDefs: readonly RecipeDietKindDefPublic[];
 };
 
 function HeroTitle({ children }: { children: string }) {
@@ -158,12 +178,20 @@ function SearchIcon({ className }: { className?: string }) {
 function RecipeCarouselCard({
   r,
   voteCounts,
+  categoryDefs,
+  dietKindDefs,
 }: {
   r: HomeRecipe;
   voteCounts: Record<string, RecipeVoteCounts>;
+  categoryDefs: readonly RecipeCategoryDefPublic[];
+  dietKindDefs: readonly RecipeDietKindDefPublic[];
 }) {
   const { locale, strings } = useUiLocale();
-  const catLabel = recipeCategoryLabel(r.category, locale);
+  const catLabel = displayRecipeCategoryLabel(
+    r.category,
+    locale === "en" ? "en" : "de",
+    categoryDefs,
+  );
   const v = voteCounts[r.id] ?? { likeCount: 0, dislikeCount: 0 };
   return (
     <Link
@@ -183,7 +211,7 @@ function RecipeCarouselCard({
             {strings.common.noImage}
           </div>
         )}
-        <RecipeDietImageBadge dietKind={r.dietKind} />
+        <RecipeDietImageBadge dietKind={r.dietKind} dietKindDefs={dietKindDefs} />
         <RecipeFavoriteButton recipeId={r.id} layout="overlay" />
         <div
           className="pointer-events-none absolute bottom-2 right-2 flex items-center gap-2 rounded-lg bg-black/60 px-2.5 py-1 text-xs font-medium text-white shadow-md backdrop-blur-[2px] sm:text-sm"
@@ -219,10 +247,14 @@ function RecipeCarousel({
   items,
   voteCounts,
   filterKey,
+  categoryDefs,
+  dietKindDefs,
 }: {
   items: HomeRecipe[];
   voteCounts: Record<string, RecipeVoteCounts>;
   filterKey: string;
+  categoryDefs: readonly RecipeCategoryDefPublic[];
+  dietKindDefs: readonly RecipeDietKindDefPublic[];
 }) {
   const { strings } = useUiLocale();
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -378,7 +410,12 @@ function RecipeCarousel({
             aria-label={r.title}
             className="w-[min(88vw,20rem)] shrink-0 origin-center will-change-transform sm:w-72"
           >
-            <RecipeCarouselCard r={r} voteCounts={voteCounts} />
+            <RecipeCarouselCard
+              r={r}
+              voteCounts={voteCounts}
+              categoryDefs={categoryDefs}
+              dietKindDefs={dietKindDefs}
+            />
           </div>
         ))}
       </div>
@@ -386,14 +423,23 @@ function RecipeCarousel({
   );
 }
 
-export function HomePageClient({ recipes, voteCounts, cookStatsByRecipeId }: Props) {
+export function HomePageClient({
+  recipes,
+  voteCounts,
+  cookStatsByRecipeId,
+  categoryDefs,
+  dietKindDefs,
+}: Props) {
   const { locale, strings: s } = useUiLocale();
   const [query, setQuery] = useState("");
   const { favoriteIdSet, favoriteIds } = useRecipeFavorites();
 
   const filtered = useMemo(
-    () => recipes.filter((r) => recipeMatchesSearchQuery(r, query)),
-    [recipes, query],
+    () =>
+      recipes.filter((r) =>
+        recipeMatchesSearchQuery(r, query, { categoryDefs, dietKindDefs }),
+      ),
+    [recipes, query, categoryDefs, dietKindDefs],
   );
 
   const recentlyCooked = useMemo(() => {
@@ -539,6 +585,8 @@ export function HomePageClient({ recipes, voteCounts, cookStatsByRecipeId }: Pro
             items={carouselStrip}
             voteCounts={voteCounts}
             filterKey={carouselFilterKey}
+            categoryDefs={categoryDefs}
+            dietKindDefs={dietKindDefs}
           />
         </div>
       )}
@@ -568,6 +616,8 @@ export function HomePageClient({ recipes, voteCounts, cookStatsByRecipeId }: Pro
                   <HomeCompactRecipeCard
                     key={r.id}
                     r={r}
+                    categoryDefs={categoryDefs}
+                    dietKindDefs={dietKindDefs}
                     meta={
                       <>
                         {rel || s.home.lastCookedFallback}
@@ -592,6 +642,8 @@ export function HomePageClient({ recipes, voteCounts, cookStatsByRecipeId }: Pro
                   <HomeCompactRecipeCard
                     key={r.id}
                     r={r}
+                    categoryDefs={categoryDefs}
+                    dietKindDefs={dietKindDefs}
                     meta={
                       <>
                         {s.home.cookedNTimes(n)}
@@ -623,6 +675,8 @@ export function HomePageClient({ recipes, voteCounts, cookStatsByRecipeId }: Pro
                 <HomeCompactRecipeCard
                   key={r.id}
                   r={r}
+                  categoryDefs={categoryDefs}
+                  dietKindDefs={dietKindDefs}
                   meta={s.home.notRated}
                 />
               ))}

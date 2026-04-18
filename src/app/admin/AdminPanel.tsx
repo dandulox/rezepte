@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useId, useRef, useState } from "react";
 import { AdminAppearancePanel } from "@/app/admin/AdminAppearancePanel";
 import { AdminRecipeDisplayLocalePanel } from "@/app/admin/AdminRecipeDisplayLocalePanel";
+import { AdminTaxonomyPanel } from "@/app/admin/AdminTaxonomyPanel";
 import {
   adminChangePinAction,
   adminLogoutAction,
@@ -20,17 +21,37 @@ import type { RecipeViewLang } from "@/lib/recipe-translate-locales";
 const changeInitial: AdminActionState = {};
 const votesResetInitial: AdminVotesResetState = {};
 
-type AdminTab = "security" | "votes" | "appearance";
+type AdminTab = "security" | "votes" | "appearance" | "taxonomy";
 
 const tabBtn =
   "rounded-t-lg border-b-2 border-transparent px-3 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--admin-accent)]";
 
+type TaxonomyCategoryRow = {
+  id: string;
+  labelDe: string;
+  labelEn: string;
+  sortOrder: number;
+};
+
+type TaxonomyDietRow = {
+  id: string;
+  labelDe: string;
+  labelEn: string;
+  sortOrder: number;
+  isMeat: boolean;
+  searchExtra: string;
+};
+
 export function AdminPanel({
   initialAppearance,
   initialRecipeDisplayLocale,
+  initialCategoryDefs,
+  initialDietKindDefs,
 }: {
   initialAppearance: AdminThemeColors;
   initialRecipeDisplayLocale: RecipeViewLang;
+  initialCategoryDefs: TaxonomyCategoryRow[];
+  initialDietKindDefs: TaxonomyDietRow[];
 }) {
   const { strings: s } = useUiLocale();
   const p = s.admin.panel;
@@ -40,9 +61,11 @@ export function AdminPanel({
   const securityTabId = useId();
   const votesTabId = useId();
   const appearanceTabId = useId();
+  const taxonomyTabId = useId();
   const securityPanelId = useId();
   const votesPanelId = useId();
   const appearancePanelId = useId();
+  const taxonomyPanelId = useId();
 
   const [changeState, changeAction, changePending] = useActionState(
     adminChangePinAction,
@@ -119,6 +142,19 @@ export function AdminPanel({
           onClick={() => setTab("appearance")}
         >
           {p.tabAppearance}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          id={taxonomyTabId}
+          aria-controls={taxonomyPanelId}
+          aria-selected={tab === "taxonomy"}
+          tabIndex={tab === "taxonomy" ? 0 : -1}
+          data-active={tab === "taxonomy" ? "true" : undefined}
+          className={`${tabBtn} text-label hover:text-foreground data-[active]:border-[var(--admin-accent)] data-[active]:text-[var(--admin-accent)]`}
+          onClick={() => setTab("taxonomy")}
+        >
+          {p.tabTaxonomy}
         </button>
       </div>
 
@@ -322,6 +358,19 @@ export function AdminPanel({
       >
         <AdminRecipeDisplayLocalePanel initialLocale={initialRecipeDisplayLocale} />
         <AdminAppearancePanel initial={initialAppearance} />
+      </div>
+
+      <div
+        role="tabpanel"
+        id={taxonomyPanelId}
+        aria-labelledby={taxonomyTabId}
+        hidden={tab !== "taxonomy"}
+        className="pt-6"
+      >
+        <AdminTaxonomyPanel
+          initialCategories={initialCategoryDefs}
+          initialDietKinds={initialDietKindDefs}
+        />
       </div>
 
       <form action={adminLogoutAction} className="mt-8">

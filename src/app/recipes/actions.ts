@@ -3,9 +3,21 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { recipeCategoryFromFormValue } from "@/lib/recipe-category";
-import { recipeDietKindFromFormValue } from "@/lib/recipe-diet";
 import { ingredientsForDb } from "@/lib/recipe-import";
+
+async function categoryFromForm(raw: string): Promise<string | null> {
+  const t = raw.trim();
+  if (!t) return null;
+  const row = await prisma.recipeCategoryDef.findUnique({ where: { id: t } });
+  return row ? t : null;
+}
+
+async function dietKindFromForm(raw: string): Promise<string | null> {
+  const t = raw.trim();
+  if (!t) return null;
+  const row = await prisma.recipeDietKindDef.findUnique({ where: { id: t } });
+  return row ? t : null;
+}
 
 export type RecipeFormState = {
   error?: string;
@@ -35,8 +47,8 @@ export async function createRecipeAction(
   const totalTime = String(formData.get("totalTime") ?? "").trim() || null;
   const sourceUrl = String(formData.get("sourceUrl") ?? "").trim() || null;
   const servingsBase = parseFloat(String(formData.get("servingsBase") ?? "4")) || 4;
-  const category = recipeCategoryFromFormValue(String(formData.get("category") ?? ""));
-  const dietKind = recipeDietKindFromFormValue(String(formData.get("dietKind") ?? ""));
+  const category = await categoryFromForm(String(formData.get("category") ?? ""));
+  const dietKind = await dietKindFromForm(String(formData.get("dietKind") ?? ""));
 
   const ingLines = linesFromBlock("ingredientsText", formData);
   const instLines = linesFromBlock("instructionsText", formData);
@@ -89,8 +101,8 @@ export async function updateRecipeAction(
   const totalTime = String(formData.get("totalTime") ?? "").trim() || null;
   const sourceUrl = String(formData.get("sourceUrl") ?? "").trim() || null;
   const servingsBase = parseFloat(String(formData.get("servingsBase") ?? "4")) || 4;
-  const category = recipeCategoryFromFormValue(String(formData.get("category") ?? ""));
-  const dietKind = recipeDietKindFromFormValue(String(formData.get("dietKind") ?? ""));
+  const category = await categoryFromForm(String(formData.get("category") ?? ""));
+  const dietKind = await dietKindFromForm(String(formData.get("dietKind") ?? ""));
 
   const ingLines = linesFromBlock("ingredientsText", formData);
   const instLines = linesFromBlock("instructionsText", formData);

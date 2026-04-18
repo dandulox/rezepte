@@ -55,9 +55,9 @@ enum RecipeVoteType {
 model Recipe {
   id           String         @id @default(cuid())
   title        String
-  /** z. B. hauptgericht, dessert — siehe RECIPE_CATEGORY_* in recipe-category.ts */
+  /** Slug aus `RecipeCategoryDef` (Admin) */
   category     String?
-  /** vegan, vegetarisch, fleisch_* — siehe RECIPE_DIET_KIND_* in recipe-diet.ts */
+  /** Slug aus `RecipeDietKindDef` (Admin) */
   dietKind     String?
   description  String?
   imageUrl     String?
