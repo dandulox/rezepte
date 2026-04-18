@@ -4,7 +4,7 @@ Web-App zum **Sammeln, Bearbeiten und Planen** eigener Rezepte: Import von Webse
 
 Die Oberfläche ist auf **Deutsch** ausgerichtet (`lang="de"`).
 
-![alt text](https://github.com/dandulox/rezepte/blob/main/startseite.png "Logo Title Text 1")
+![alt text](https://github.com/dandulox/rezepte/blob/main/startseite.png "Logo")
 
 ## Funktionen
 
