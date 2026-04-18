@@ -1,17 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+import { LocaleFlagToggle } from "@/components/LocaleFlagToggle";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useUiLocale } from "@/components/UiLocaleProvider";
 import { useIosSafeClick } from "@/lib/use-ios-safe-click";
-
-const NAV_LINKS = [
-  { href: "/recipes/kategorien", label: "Kategorien" },
-  { href: "/favoriten", label: "Favoriten" },
-  { href: "/plan", label: "Wochenplan" },
-  { href: "/plan/einkauf", label: "Einkauf" },
-] as const;
 
 function MenuIcon({ className }: { className?: string }) {
   return (
@@ -58,9 +53,26 @@ function useIsClient() {
 }
 
 export function SiteNav() {
+  const { strings: s } = useUiLocale();
   const [open, setOpen] = useState(false);
   const mounted = useIsClient();
   const menuToggle = useIosSafeClick(() => setOpen((v) => !v));
+
+  const navLinks = useMemo(
+    () =>
+      [
+        { href: "/recipes/kategorien", label: s.nav.categories },
+        { href: "/favoriten", label: s.nav.favorites },
+        { href: "/plan", label: s.nav.weekPlan },
+        { href: "/plan/einkauf", label: s.nav.shopping },
+      ] as const,
+    [
+      s.nav.categories,
+      s.nav.favorites,
+      s.nav.shopping,
+      s.nav.weekPlan,
+    ],
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -89,7 +101,7 @@ export function SiteNav() {
         id="site-mobile-nav"
         role="dialog"
         aria-modal="true"
-        aria-label="Mobilmenü"
+        aria-label={s.nav.mobileMenuAria}
         className="fixed inset-x-0 bottom-0 z-[200] flex flex-col border-t border-border bg-background lg:hidden"
         style={{
           top: "calc(3.5rem + env(safe-area-inset-top, 0px))",
@@ -99,9 +111,12 @@ export function SiteNav() {
           paddingRight: "max(1rem, env(safe-area-inset-right, 0px))",
         }}
       >
-        <nav className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain py-4" aria-label="Menüpunkte">
+        <nav
+          className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain py-4"
+          aria-label={s.nav.menuPointsAria}
+        >
           <ul className="flex list-none flex-col gap-1">
-            {NAV_LINKS.map(({ href, label }) => (
+            {navLinks.map(({ href, label }) => (
               <li key={href}>
                 <Link
                   href={href}
@@ -118,7 +133,7 @@ export function SiteNav() {
                 className="mt-2 block rounded-xl bg-emerald-600 px-4 py-3.5 text-center text-base font-medium text-white transition hover:bg-emerald-700 active:bg-emerald-800"
                 onClick={() => setOpen(false)}
               >
-                Neues Rezept
+                {s.nav.newRecipe}
               </Link>
             </li>
           </ul>
@@ -136,14 +151,14 @@ export function SiteNav() {
             className="shrink-0 text-lg font-semibold tracking-tight text-foreground"
             onClick={() => setOpen(false)}
           >
-            Rezeptbuch
+            {s.nav.siteTitle}
           </Link>
           <div className="flex min-w-0 flex-1 items-center justify-end gap-2 sm:gap-3">
             <nav
               className="hidden items-center justify-end gap-1 text-sm font-medium lg:flex lg:gap-2"
-              aria-label="Hauptnavigation"
+              aria-label={s.nav.mainNavAria}
             >
-              {NAV_LINKS.map(({ href, label }) => (
+              {navLinks.map(({ href, label }) => (
                 <Link
                   key={href}
                   href={href}
@@ -156,10 +171,11 @@ export function SiteNav() {
                 href="/recipes/new"
                 className="rounded-lg bg-emerald-600 px-3 py-2 text-white transition hover:bg-emerald-700"
               >
-                Neues Rezept
+                {s.nav.newRecipe}
               </Link>
             </nav>
             <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+              <LocaleFlagToggle />
               <ThemeToggle />
               <button
                 type="button"
@@ -167,7 +183,7 @@ export function SiteNav() {
                 className="flex h-11 w-11 touch-manipulation items-center justify-center rounded-lg text-label transition hover:bg-card-muted lg:hidden"
                 aria-expanded={open}
                 aria-controls="site-mobile-nav"
-                aria-label={open ? "Menü schließen" : "Menü öffnen"}
+                aria-label={open ? s.nav.closeMenu : s.nav.openMenu}
               >
                 {open ? <CloseIcon /> : <MenuIcon />}
               </button>

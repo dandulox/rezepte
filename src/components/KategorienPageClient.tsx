@@ -4,17 +4,16 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { RecipeFavoriteButton } from "@/components/RecipeFavoriteButton";
 import { RecipeDietImageBadge } from "@/components/RecipeDietBadge";
+import { useUiLocale } from "@/components/UiLocaleProvider";
 import {
   RECIPE_CATEGORY_IDS,
-  RECIPE_CATEGORY_LABEL,
   isRecipeCategoryId,
+  recipeCategoryLabel,
 } from "@/lib/recipe-category";
 import { recipeDietKindIsMeat } from "@/lib/recipe-diet";
 import { sortRecipesForCategoryView } from "@/lib/recipe-discovery-ranking";
 import { recipeMatchesSearchQuery } from "@/lib/recipe-search";
 import type { RecipeVoteCounts } from "@/lib/recipe-votes";
-
-const UNCATEGORIZED_LABEL = "Ohne Kategorie";
 
 type DietQuickFilter = "vegetarisch" | "vegan" | "fleisch";
 
@@ -71,6 +70,7 @@ function RecipeGrid({
   recipes: KategorienRecipe[];
   voteCounts: Record<string, RecipeVoteCounts>;
 }) {
+  const { strings: s } = useUiLocale();
   return (
     <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {recipes.map((r) => {
@@ -91,7 +91,7 @@ function RecipeGrid({
                   />
                 ) : (
                   <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                    Kein Bild
+                    {s.common.noImage}
                   </div>
                 )}
                 <RecipeDietImageBadge dietKind={r.dietKind} />
@@ -105,7 +105,7 @@ function RecipeGrid({
                   <span>👎 {v.dislikeCount}</span>
                 </div>
                 <span className="sr-only">
-                  {v.likeCount} Likes, {v.dislikeCount} Dislikes
+                  {s.common.likesDislikesSr(v.likeCount, v.dislikeCount)}
                 </span>
               </div>
               <div className="flex flex-1 flex-col gap-2 p-4">
@@ -113,7 +113,7 @@ function RecipeGrid({
                   {r.title}
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  {r.servingsBase} Portionen · {r.ingredients.length} Zutaten
+                  {s.common.servingsIngredients(r.servingsBase, r.ingredients.length)}
                 </p>
               </div>
             </Link>
@@ -125,6 +125,7 @@ function RecipeGrid({
 }
 
 export function KategorienPageClient({ recipes, voteCounts }: Props) {
+  const { locale, strings: s } = useUiLocale();
   const [query, setQuery] = useState("");
   const [dietQuickFilter, setDietQuickFilter] = useState<DietQuickFilter | null>(null);
 
@@ -152,21 +153,21 @@ export function KategorienPageClient({ recipes, voteCounts }: Props) {
     <div className="mx-auto max-w-5xl px-4 py-10">
       <div className="mb-10">
         <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-          Nach Kategorie
+          {s.categories.title}
         </h1>
         <p className="mt-3 text-sm">
           <Link
             href="/"
             className="font-medium text-emerald-700 underline-offset-2 hover:underline dark:text-emerald-400"
           >
-            Zur Hauptseite
+            {s.categories.backHome}
           </Link>
         </p>
 
         <div
           className="mt-6 flex flex-wrap gap-2"
           role="group"
-          aria-label="Nach Ernährungsart filtern"
+          aria-label={s.categories.filterGroupAria}
         >
           <button
             type="button"
@@ -178,7 +179,7 @@ export function KategorienPageClient({ recipes, voteCounts }: Props) {
                 : "rounded-full border border-border-strong bg-card px-4 py-2 text-sm font-medium text-body shadow-sm transition hover:bg-card-muted"
             }
           >
-            Vegetarisch
+            {s.categories.vegetarian}
           </button>
           <button
             type="button"
@@ -190,7 +191,7 @@ export function KategorienPageClient({ recipes, voteCounts }: Props) {
                 : "rounded-full border border-border-strong bg-card px-4 py-2 text-sm font-medium text-body shadow-sm transition hover:bg-card-muted"
             }
           >
-            Vegan
+            {s.categories.vegan}
           </button>
           <button
             type="button"
@@ -202,13 +203,13 @@ export function KategorienPageClient({ recipes, voteCounts }: Props) {
                 : "rounded-full border border-border-strong bg-card px-4 py-2 text-sm font-medium text-body shadow-sm transition hover:bg-card-muted"
             }
           >
-            Fleischgerichte
+            {s.categories.meat}
           </button>
         </div>
 
         <div className="relative mx-auto mt-8 w-full max-w-[584px]">
           <label htmlFor="kategorien-recipe-search" className="sr-only">
-            Rezepte durchsuchen
+            {s.categories.searchLabel}
           </label>
           <SearchIcon className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -216,7 +217,7 @@ export function KategorienPageClient({ recipes, voteCounts }: Props) {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Suche nach Titel, Kategorie, Ernährung, Zutaten…"
+            placeholder={s.categories.searchPlaceholder}
             autoComplete="off"
             spellCheck={false}
             className="h-12 w-full rounded-full border border-[#dfe1e5] bg-[var(--card)] py-3 pl-12 pr-5 text-base text-foreground shadow-sm outline-none transition-[box-shadow,border-color] placeholder:text-muted-foreground hover:shadow-[0_1px_6px_rgba(32,33,36,0.28)] focus:border-transparent focus:shadow-[0_1px_6px_rgba(32,33,36,0.28)] focus:ring-2 focus:ring-[#4285F4]/35 dark:border-zinc-600 dark:hover:shadow-[0_1px_6px_rgba(0,0,0,0.45)] dark:focus:ring-[#8ab4f8]/40"
@@ -226,13 +227,11 @@ export function KategorienPageClient({ recipes, voteCounts }: Props) {
 
       {visible.length === 0 ? (
         <p className="py-8 text-center text-muted-foreground">
-          {hasActiveQuery && dietQuickFilter
-            ? `Keine Treffer für „${query.trim()}“ mit dem gewählten Ernährungsfilter.`
-            : hasActiveQuery
-              ? `Keine Treffer für „${query.trim()}“.`
-              : dietQuickFilter
-                ? "Keine Rezepte mit dieser Ernährungsart (oder keine passende Klassifizierung)."
-                : "Keine Rezepte."}
+          {s.categories.empty({
+            hasQuery: hasActiveQuery,
+            hasDiet: Boolean(dietQuickFilter),
+            query: query.trim(),
+          })}
         </p>
       ) : (
         <div className="flex flex-col gap-14">
@@ -245,7 +244,7 @@ export function KategorienPageClient({ recipes, voteCounts }: Props) {
             return (
               <section key={catId} id={catId} className="scroll-mt-24">
                 <h2 className="mb-4 text-xl font-semibold tracking-tight text-foreground">
-                  {RECIPE_CATEGORY_LABEL[catId]}
+                  {recipeCategoryLabel(catId, locale)}
                   <span className="ml-2 text-base font-normal text-muted-foreground">
                     ({inCat.length})
                   </span>
@@ -258,7 +257,7 @@ export function KategorienPageClient({ recipes, voteCounts }: Props) {
           {uncategorized.length > 0 ? (
             <section className="scroll-mt-24">
               <h2 className="mb-4 text-xl font-semibold tracking-tight text-foreground">
-                {UNCATEGORIZED_LABEL}
+                {s.categories.uncategorized}
                 <span className="ml-2 text-base font-normal text-muted-foreground">
                   ({uncategorized.length})
                 </span>

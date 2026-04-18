@@ -6,7 +6,9 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { RecipeFavoriteButton } from "@/components/RecipeFavoriteButton";
 import { RecipeDietImageBadge } from "@/components/RecipeDietBadge";
 import { useRecipeFavorites } from "@/components/RecipeFavoritesProvider";
+import { useUiLocale } from "@/components/UiLocaleProvider";
 import { recipeCategoryLabel } from "@/lib/recipe-category";
+import { formatPastRelative } from "@/lib/site-i18n";
 import type { RecipeCookStats } from "@/lib/recipe-discovery-ranking";
 import { recipeMatchesSearchQuery } from "@/lib/recipe-search";
 import type { RecipeVoteCounts } from "@/lib/recipe-votes";
@@ -33,37 +35,9 @@ function shuffleInPlace<T>(items: T[]): void {
   }
 }
 
-/** Relatives Datum in der Vergangenheit (z. B. letztes Kochen), auf Deutsch. */
-function formatPastRelativeDe(iso: string): string {
-  const thenMs = Date.parse(iso);
-  if (!Number.isFinite(thenMs)) return "";
-  const diffMs = Date.now() - thenMs;
-  if (diffMs < 0) {
-    return new Date(thenMs).toLocaleDateString("de-DE", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  }
-  const rtf = new Intl.RelativeTimeFormat("de", { numeric: "auto" });
-  const sec = Math.floor(diffMs / 1000);
-  if (sec < 45) return "gerade eben";
-  const min = Math.floor(sec / 60);
-  if (min < 60) return rtf.format(-min, "minute");
-  const hr = Math.floor(min / 60);
-  if (hr < 24) return rtf.format(-hr, "hour");
-  const day = Math.floor(hr / 24);
-  if (day < 7) return rtf.format(-day, "day");
-  const week = Math.floor(day / 7);
-  if (week < 5) return rtf.format(-week, "week");
-  const month = Math.floor(day / 30);
-  if (month < 12) return rtf.format(-month, "month");
-  const year = Math.floor(day / 365);
-  return rtf.format(-year, "year");
-}
-
 function HomeCompactRecipeCard({ r, meta }: { r: HomeRecipe; meta: ReactNode }) {
-  const catLabel = recipeCategoryLabel(r.category);
+  const { locale, strings } = useUiLocale();
+  const catLabel = recipeCategoryLabel(r.category, locale);
   return (
     <li className="w-[min(72vw,14rem)] shrink-0 snap-start sm:w-56">
       <Link
@@ -80,7 +54,7 @@ function HomeCompactRecipeCard({ r, meta }: { r: HomeRecipe; meta: ReactNode }) 
             />
           ) : (
             <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-              Kein Bild
+              {strings.common.noImage}
             </div>
           )}
           <RecipeDietImageBadge dietKind={r.dietKind} />
@@ -188,7 +162,8 @@ function RecipeCarouselCard({
   r: HomeRecipe;
   voteCounts: Record<string, RecipeVoteCounts>;
 }) {
-  const catLabel = recipeCategoryLabel(r.category);
+  const { locale, strings } = useUiLocale();
+  const catLabel = recipeCategoryLabel(r.category, locale);
   const v = voteCounts[r.id] ?? { likeCount: 0, dislikeCount: 0 };
   return (
     <Link
@@ -205,7 +180,7 @@ function RecipeCarouselCard({
           />
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-            Kein Bild
+            {strings.common.noImage}
           </div>
         )}
         <RecipeDietImageBadge dietKind={r.dietKind} />
@@ -219,7 +194,7 @@ function RecipeCarouselCard({
           <span>👎 {v.dislikeCount}</span>
         </div>
         <span className="sr-only">
-          {v.likeCount} Likes, {v.dislikeCount} Dislikes
+          {strings.common.likesDislikesSr(v.likeCount, v.dislikeCount)}
         </span>
       </div>
       <div className="flex flex-1 flex-col gap-2 p-4">
@@ -228,7 +203,7 @@ function RecipeCarouselCard({
           <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">{catLabel}</p>
         ) : null}
         <p className="text-sm text-muted-foreground">
-          {r.servingsBase} Portionen · {r.ingredients.length} Zutaten
+          {strings.common.servingsIngredients(r.servingsBase, r.ingredients.length)}
         </p>
       </div>
     </Link>
@@ -249,6 +224,7 @@ function RecipeCarousel({
   voteCounts: Record<string, RecipeVoteCounts>;
   filterKey: string;
 }) {
+  const { strings } = useUiLocale();
   const viewportRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const offsetRef = useRef(0);
@@ -372,8 +348,8 @@ function RecipeCarousel({
     <div
       ref={viewportRef}
       role="region"
-      aria-roledescription="Karussell"
-      aria-label="Rezepte, endlos automatisch"
+      aria-roledescription={strings.home.carouselRegion}
+      aria-label={strings.home.carouselLabel}
       className="relative overflow-x-hidden overflow-y-visible py-10 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:h-0 [&::-webkit-scrollbar]:w-0"
       onPointerEnter={(e) => {
         if (e.pointerType === "mouse") pausedRef.current = true;
@@ -398,7 +374,7 @@ function RecipeCarousel({
           <div
             key={k}
             role="group"
-            aria-roledescription="Folie"
+            aria-roledescription={strings.home.slideRegion}
             aria-label={r.title}
             className="w-[min(88vw,20rem)] shrink-0 origin-center will-change-transform sm:w-72"
           >
@@ -411,6 +387,7 @@ function RecipeCarousel({
 }
 
 export function HomePageClient({ recipes, voteCounts, cookStatsByRecipeId }: Props) {
+  const { locale, strings: s } = useUiLocale();
   const [query, setQuery] = useState("");
   const { favoriteIdSet, favoriteIds } = useRecipeFavorites();
 
@@ -431,10 +408,10 @@ export function HomePageClient({ recipes, voteCounts, cookStatsByRecipeId }: Pro
     }
     rows.sort((a, b) => {
       if (b.last !== a.last) return b.last - a.last;
-      return a.r.title.localeCompare(b.r.title, "de");
+      return a.r.title.localeCompare(b.r.title, locale === "en" ? "en" : "de");
     });
     return rows.slice(0, HOME_SECTION_LIMIT_COMPACT).map((x) => x.r);
-  }, [filtered, cookStatsByRecipeId]);
+  }, [filtered, cookStatsByRecipeId, locale]);
 
   const mostCooked = useMemo(() => {
     const skip = new Set(recentlyCooked.map((r) => r.id));
@@ -448,10 +425,10 @@ export function HomePageClient({ recipes, voteCounts, cookStatsByRecipeId }: Pro
     }
     rows.sort((a, b) => {
       if (b.count !== a.count) return b.count - a.count;
-      return a.r.title.localeCompare(b.r.title, "de");
+      return a.r.title.localeCompare(b.r.title, locale === "en" ? "en" : "de");
     });
     return rows.slice(0, HOME_SECTION_LIMIT).map((x) => x.r);
-  }, [filtered, cookStatsByRecipeId, recentlyCooked]);
+  }, [filtered, cookStatsByRecipeId, recentlyCooked, locale]);
 
   /** Kandidaten für „Noch unentdeckt“: nie gekocht, keine Likes/Dislikes (Reihenfolge egal). */
   const untouchedPool = useMemo(() => {
@@ -508,13 +485,13 @@ export function HomePageClient({ recipes, voteCounts, cookStatsByRecipeId }: Pro
     return (
       <div className="mx-auto max-w-5xl px-[max(1rem,env(safe-area-inset-left,0px))] py-10 pr-[max(1rem,env(safe-area-inset-right,0px))]">
         <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
-          <p className="text-muted-foreground">Noch keine Rezepte.</p>
+          <p className="text-muted-foreground">{s.home.noRecipes}</p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link
               href="/recipes/new"
               className="rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700"
             >
-              Neues Rezept
+              {s.nav.newRecipe}
             </Link>
           </div>
         </div>
@@ -525,15 +502,14 @@ export function HomePageClient({ recipes, voteCounts, cookStatsByRecipeId }: Pro
   return (
     <div className="mx-auto max-w-5xl px-[max(1rem,env(safe-area-inset-left,0px))] pb-10 pt-6 pr-[max(1rem,env(safe-area-inset-right,0px))]">
       <div className="flex flex-col items-center px-2 pb-10 pt-4 sm:pt-8">
-        <HeroTitle>Rezeptbuch</HeroTitle>
+        <HeroTitle>{s.home.heroTitle}</HeroTitle>
         <p className="mb-8 max-w-lg text-center text-sm text-muted-foreground sm:text-base">
-          Importiere Rezepte von bekannten Seiten oder lege sie manuell an. Portionen kannst du auf der
-          Rezeptseite anpassen.
+          {s.home.heroSubtitle}
         </p>
 
         <div className="relative w-full max-w-[584px]">
           <label htmlFor="home-recipe-search" className="sr-only">
-            Rezepte durchsuchen
+            {s.home.searchLabel}
           </label>
           <SearchIcon className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -541,7 +517,7 @@ export function HomePageClient({ recipes, voteCounts, cookStatsByRecipeId }: Pro
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Titel, Kategorie, Ernährung, Zutaten…"
+            placeholder={s.home.searchPlaceholder}
             autoComplete="off"
             spellCheck={false}
             className="h-12 w-full rounded-full border border-[#dfe1e5] bg-[var(--card)] py-3 pl-12 pr-5 text-base text-foreground shadow-sm outline-none transition-[box-shadow,border-color] placeholder:text-muted-foreground hover:shadow-[0_1px_6px_rgba(32,33,36,0.28)] focus:border-transparent focus:shadow-[0_1px_6px_rgba(32,33,36,0.28)] focus:ring-2 focus:ring-[#4285F4]/35 dark:border-zinc-600 dark:hover:shadow-[0_1px_6px_rgba(0,0,0,0.45)] dark:focus:ring-[#8ab4f8]/40"
@@ -551,11 +527,11 @@ export function HomePageClient({ recipes, voteCounts, cookStatsByRecipeId }: Pro
 
       {filtered.length === 0 ? (
         <p className="py-8 text-center text-muted-foreground">
-          Keine Treffer für „{query.trim()}“. Anderen Suchbegriff versuchen.
+          {s.home.noHits(query.trim())}
         </p>
       ) : carouselEligible.length === 0 ? (
         <p className="py-8 text-center text-muted-foreground">
-          Alle Treffer sind Favoriten — im Karussell werden nur nicht-gemerkte Rezepte vorgeschlagen.
+          {s.home.allFavoritesCarousel}
         </p>
       ) : (
         <div className="-mx-4 overflow-x-hidden px-4 sm:-mx-0 sm:px-0">
@@ -572,18 +548,20 @@ export function HomePageClient({ recipes, voteCounts, cookStatsByRecipeId }: Pro
           {recentlyCooked.length > 0 ? (
             <HomeDiscoverySection
               headingId="home-recently-cooked-heading"
-              title="Zuletzt gekocht"
-              scrollAriaLabel="Zuletzt gekochte Rezepte. Bereich fokussieren, dann mit den Pfeiltasten nach links und rechts scrollen."
+              title={s.home.lastCooked}
+              scrollAriaLabel={s.home.scrollRecentlyCooked}
             >
               {recentlyCooked.map((r) => {
-                const s = cookStatsByRecipeId[r.id];
-                const rel = s?.lastCookedAt ? formatPastRelativeDe(s.lastCookedAt) : "";
-                const n = s?.cookCount ?? 0;
+                const st = cookStatsByRecipeId[r.id];
+                const rel = st?.lastCookedAt
+                  ? formatPastRelative(st.lastCookedAt, locale)
+                  : "";
+                const n = st?.cookCount ?? 0;
                 const countPart =
                   n > 1 ? (
                     <>
                       {" "}
-                      · {n}× gekocht
+                      · {s.home.cookedNTimes(n)}
                     </>
                   ) : null;
                 return (
@@ -592,7 +570,7 @@ export function HomePageClient({ recipes, voteCounts, cookStatsByRecipeId }: Pro
                     r={r}
                     meta={
                       <>
-                        {rel || "Zuletzt gekocht"}
+                        {rel || s.home.lastCookedFallback}
                         {countPart}
                       </>
                     }
@@ -605,8 +583,8 @@ export function HomePageClient({ recipes, voteCounts, cookStatsByRecipeId }: Pro
           {mostCooked.length > 0 ? (
             <HomeDiscoverySection
               headingId="home-most-cooked-heading"
-              title="Am häufigsten gekocht"
-              scrollAriaLabel="Am häufigsten gekochte Rezepte. Bereich fokussieren, dann mit den Pfeiltasten nach links und rechts scrollen."
+              title={s.home.mostCooked}
+              scrollAriaLabel={s.home.scrollMostCooked}
             >
               {mostCooked.map((r) => {
                 const n = cookStatsByRecipeId[r.id]?.cookCount ?? 0;
@@ -616,11 +594,15 @@ export function HomePageClient({ recipes, voteCounts, cookStatsByRecipeId }: Pro
                     r={r}
                     meta={
                       <>
-                        {n}× gekocht
+                        {s.home.cookedNTimes(n)}
                         {cookStatsByRecipeId[r.id]?.lastCookedAt ? (
                           <>
                             {" "}
-                            · zuletzt {formatPastRelativeDe(cookStatsByRecipeId[r.id]!.lastCookedAt!)}
+                            · {s.home.lastTimePrefix}{" "}
+                            {formatPastRelative(
+                              cookStatsByRecipeId[r.id]!.lastCookedAt!,
+                              locale,
+                            )}
                           </>
                         ) : null}
                       </>
@@ -634,11 +616,15 @@ export function HomePageClient({ recipes, voteCounts, cookStatsByRecipeId }: Pro
           {untouchedRecipes.length > 0 ? (
             <HomeDiscoverySection
               headingId="home-untouched-heading"
-              title="Noch unentdeckt"
-              scrollAriaLabel="Rezepte ohne Bewertung und ohne Koch-Historie. Bereich fokussieren, dann mit den Pfeiltasten nach links und rechts scrollen."
+              title={s.home.stillUndiscovered}
+              scrollAriaLabel={s.home.scrollUntouched}
             >
               {untouchedRecipes.map((r) => (
-                <HomeCompactRecipeCard key={r.id} r={r} meta="Noch nicht bewertet" />
+                <HomeCompactRecipeCard
+                  key={r.id}
+                  r={r}
+                  meta={s.home.notRated}
+                />
               ))}
             </HomeDiscoverySection>
           ) : null}

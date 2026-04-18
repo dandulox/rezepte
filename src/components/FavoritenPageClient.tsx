@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { RecipeFavoriteButton } from "@/components/RecipeFavoriteButton";
 import { RecipeDietImageBadge } from "@/components/RecipeDietBadge";
 import { useRecipeFavorites } from "@/components/RecipeFavoritesProvider";
+import { useUiLocale } from "@/components/UiLocaleProvider";
 import type { HomeRecipe } from "@/components/HomePageClient";
 import { recipeCategoryLabel } from "@/lib/recipe-category";
 import type { RecipeVoteCounts } from "@/lib/recipe-votes";
@@ -15,6 +16,7 @@ type Props = {
 };
 
 export function FavoritenPageClient({ recipes, voteCounts }: Props) {
+  const { locale, strings: s } = useUiLocale();
   const { ready, favoriteIdSet } = useRecipeFavorites();
 
   const favoriten = useMemo(
@@ -25,7 +27,7 @@ export function FavoritenPageClient({ recipes, voteCounts }: Props) {
   if (!ready) {
     return (
       <div className="mx-auto max-w-5xl px-4 py-10">
-        <p className="text-center text-muted-foreground">Lade Favoriten…</p>
+        <p className="text-center text-muted-foreground">{s.favorites.loading}</p>
       </div>
     );
   }
@@ -33,15 +35,15 @@ export function FavoritenPageClient({ recipes, voteCounts }: Props) {
   if (favoriten.length === 0) {
     return (
       <div className="mx-auto max-w-5xl px-4 py-10">
-        <h1 className="mb-2 text-3xl font-semibold tracking-tight text-foreground">Favoriten</h1>
-        <p className="mb-8 text-muted-foreground">
-          Noch keine Favoriten. Stern auf der Startseite oder Rezeptseite tippen, um Rezepte zu merken.
-        </p>
+        <h1 className="mb-2 text-3xl font-semibold tracking-tight text-foreground">
+          {s.favorites.title}
+        </h1>
+        <p className="mb-8 text-muted-foreground">{s.favorites.empty}</p>
         <Link
           href="/"
           className="inline-flex rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700"
         >
-          Zur Übersicht
+          {s.favorites.toOverview}
         </Link>
       </div>
     );
@@ -49,14 +51,16 @@ export function FavoritenPageClient({ recipes, voteCounts }: Props) {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
-      <h1 className="mb-2 text-3xl font-semibold tracking-tight text-foreground">Favoriten</h1>
+      <h1 className="mb-2 text-3xl font-semibold tracking-tight text-foreground">
+        {s.favorites.title}
+      </h1>
       <p className="mb-8 text-sm text-muted-foreground">
-        {favoriten.length} {favoriten.length === 1 ? "Rezept" : "Rezepte"} gespeichert in diesem Browser.
+        {s.favorites.countLine(favoriten.length)}
       </p>
       <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {favoriten.map((r) => {
           const v = voteCounts[r.id] ?? { likeCount: 0, dislikeCount: 0 };
-          const catLabel = recipeCategoryLabel(r.category);
+          const catLabel = recipeCategoryLabel(r.category, locale);
           return (
             <li key={r.id}>
               <Link
@@ -73,7 +77,7 @@ export function FavoritenPageClient({ recipes, voteCounts }: Props) {
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                      Kein Bild
+                      {s.common.noImage}
                     </div>
                   )}
                   <RecipeDietImageBadge dietKind={r.dietKind} />
@@ -87,7 +91,7 @@ export function FavoritenPageClient({ recipes, voteCounts }: Props) {
                     <span>👎 {v.dislikeCount}</span>
                   </div>
                   <span className="sr-only">
-                    {v.likeCount} Likes, {v.dislikeCount} Dislikes
+                    {s.common.likesDislikesSr(v.likeCount, v.dislikeCount)}
                   </span>
                 </div>
                 <div className="flex flex-1 flex-col gap-2 p-4">
@@ -98,7 +102,7 @@ export function FavoritenPageClient({ recipes, voteCounts }: Props) {
                     </p>
                   ) : null}
                   <p className="text-sm text-muted-foreground">
-                    {r.servingsBase} Portionen · {r.ingredients.length} Zutaten
+                    {s.common.servingsIngredients(r.servingsBase, r.ingredients.length)}
                   </p>
                 </div>
               </Link>

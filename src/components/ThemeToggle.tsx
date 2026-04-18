@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useUiLocale } from "@/components/UiLocaleProvider";
 import { THEME_STORAGE_KEY } from "@/lib/theme-storage";
 import { useIosSafeClick } from "@/lib/use-ios-safe-click";
 
@@ -39,6 +40,7 @@ function persistPref(pref: ThemePreference) {
 }
 
 export function ThemeToggle() {
+  const { strings: s } = useUiLocale();
   const [pref, setPref] = useState<ThemePreference | null>(null);
 
   useEffect(() => {
@@ -74,20 +76,20 @@ export function ThemeToggle() {
 
   const label =
     pref === "dark"
-      ? "Dunkel"
+      ? s.theme.dark
       : pref === "light"
-        ? "Hell"
+        ? s.theme.light
         : pref === "system"
-          ? "System"
-          : "Farbschema";
+          ? s.theme.system
+          : s.theme.fallback;
 
   return (
     <button
       type="button"
       {...iosClick}
       className="flex h-11 w-11 touch-manipulation items-center justify-center rounded-lg text-label transition hover:bg-card-muted"
-      aria-label={`Farbschema: ${label}. Klicken zum Wechseln.`}
-      title={`${label} — zu Hell, Dunkel oder System wechseln`}
+      aria-label={s.theme.cycleAria(label)}
+      title={`${label} — ${s.theme.cycleTitle}`}
     >
       {pref === "dark" ? (
         <MoonIcon />

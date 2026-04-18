@@ -33,6 +33,22 @@ export const RECIPE_CATEGORY_LABEL: Record<RecipeCategoryId, string> = {
   sonstiges: "Sonstiges",
 };
 
+export const RECIPE_CATEGORY_LABEL_EN: Record<RecipeCategoryId, string> = {
+  hauptgericht: "Main course",
+  vorspeise: "Starter",
+  beilage: "Side dish",
+  salat: "Salad",
+  suppe: "Soup & stew",
+  dessert: "Dessert",
+  backen: "Baking",
+  fruehstueck: "Breakfast & brunch",
+  getraenk: "Drink",
+  snack: "Snack",
+  sonstiges: "Other",
+};
+
+export type RecipeCategoryLabelLocale = "de" | "en";
+
 export function isRecipeCategoryId(value: string): value is RecipeCategoryId {
   return (RECIPE_CATEGORY_IDS as readonly string[]).includes(value);
 }
@@ -180,7 +196,8 @@ export function recipeCategoryFromFormValue(raw: string): RecipeCategoryId | nul
 
 export function recipeCategoryLabel(
   id: string | null | undefined,
+  locale: RecipeCategoryLabelLocale = "de",
 ): string | null {
   if (!id || !isRecipeCategoryId(id)) return null;
-  return RECIPE_CATEGORY_LABEL[id];
+  return locale === "en" ? RECIPE_CATEGORY_LABEL_EN[id] : RECIPE_CATEGORY_LABEL[id];
 }

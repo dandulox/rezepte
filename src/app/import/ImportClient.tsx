@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import type { ParsedRecipeDraft } from "@/lib/recipe-import";
 import { RecipeForm, type RecipeFormInitial } from "@/components/RecipeForm";
+import { useUiLocale } from "@/components/UiLocaleProvider";
+import type { ParsedRecipeDraft } from "@/lib/recipe-import";
 
 function draftToFormInitial(d: ParsedRecipeDraft): RecipeFormInitial {
   return {
@@ -23,6 +24,7 @@ function draftToFormInitial(d: ParsedRecipeDraft): RecipeFormInitial {
 }
 
 export function ImportClient() {
+  const { strings: s } = useUiLocale();
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,12 +43,12 @@ export function ImportClient() {
       });
       const data = (await res.json()) as { error?: string; title?: string };
       if (!res.ok) {
-        setError(data.error ?? `Fehler ${res.status}`);
+        setError(data.error ?? s.import.errorStatus(res.status));
         return;
       }
       setDraft(data as ParsedRecipeDraft);
     } catch {
-      setError("Netzwerkfehler beim Import.");
+      setError(s.import.errorNetwork);
     } finally {
       setLoading(false);
     }
@@ -55,13 +57,9 @@ export function ImportClient() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
       <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-        Rezept importieren
+        {s.import.title}
       </h1>
-      <p className="mt-2 text-muted-foreground">
-        Viele Seiten liefern strukturierte Daten (JSON-LD), u. a. Chefkoch und{" "}
-        <span className="whitespace-nowrap">REWE.de/rezepte</span>. Gib die Rezept-URL ein, prüfe die
-        Vorschau und speichere das Rezept lokal.
-      </p>
+      <p className="mt-2 text-muted-foreground">{s.import.intro}</p>
 
       <form onSubmit={onPreview} className="mt-8 flex flex-col gap-3 sm:flex-row">
         <input
@@ -69,7 +67,7 @@ export function ImportClient() {
           required
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://www.chefkoch.de/… oder https://www.rewe.de/rezepte/…"
+          placeholder={s.import.placeholder}
           className="input-field flex-1"
         />
         <button
@@ -77,7 +75,7 @@ export function ImportClient() {
           disabled={loading}
           className="rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
         >
-          {loading ? "Laden…" : "Vorschau"}
+          {loading ? s.import.loading : s.import.preview}
         </button>
       </form>
 
@@ -92,9 +90,11 @@ export function ImportClient() {
 
       {draft ? (
         <div className="mt-10">
-          <h2 className="text-xl font-semibold text-foreground">Vorschau und Speichern</h2>
+          <h2 className="text-xl font-semibold text-foreground">
+            {s.import.previewSectionTitle}
+          </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Daten vor dem Speichern anpassen. Bilder verlinken oft auf die Quelle (Hotlink).
+            {s.import.previewSectionHint}
           </p>
           <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-card">
             {draft.imageUrl ? (

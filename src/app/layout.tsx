@@ -53,11 +53,13 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body className="flex min-h-full flex-col bg-background text-foreground">
-        <SiteNav />
         <AppProviders>
-          <main className="flex-1">{children}</main>
+          <>
+            <SiteNav />
+            <main className="flex-1">{children}</main>
+            <SiteFooter />
+          </>
         </AppProviders>
-        <SiteFooter />
       </body>
     </html>
   );
